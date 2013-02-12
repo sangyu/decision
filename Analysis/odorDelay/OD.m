@@ -181,12 +181,12 @@ set(f4, 'Position', [0, 0, 1200, 250])
 
 for i=0:10
     figure(F+4)
-    subplot(121)
+    subplot(141)
     hold on
 
 yfit = glmval(bg, [xx, xc*i], 'logit', 'size', 1);
 plot(linspace(0,10)', yfit, '-')
-    subplot(122)
+    subplot(142)
     hold on
 
 yfit = glmval(bg, [xc*i, xx], 'logit', 'size', 1);
