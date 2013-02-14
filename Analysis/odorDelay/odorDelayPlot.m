@@ -63,7 +63,7 @@ ylabel('Preference');
 
 subplot(2,2, 2)
 
-plotGlmThings(data, 8, 4)
+plotGlmThings(data, 8, 10)
 
 subplot(2, 2, 3)
 plotGlmThings(data, 9, 4)

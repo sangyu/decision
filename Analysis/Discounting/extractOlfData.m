@@ -101,6 +101,10 @@ end
 toDelete=[toDelete; newtrial_index; finished_index; available_index; nextCue_index; odor];
 events([toDelete], :) = [];
 events(end,:) = [];
+if length(trialno)<toDelete(end)
+    toDelete(end)=[];
+end
+
 trialno([toDelete], :) = [];
 time=zeros(length(events), 1);
 

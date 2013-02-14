@@ -1,4 +1,4 @@
-function plotGlmThings(data, regressors, plotters)
+function [bg,DEV,STATS, intercept]=plotGlmThings(data, regressors, plotters)
 %%
 global april
 plotterRange=unique(data(:, plotters));
@@ -13,9 +13,14 @@ for i=1:length(plotterRange)
     end
 [bg(:, i),DEV(:, i),STATS(:, i)] = glmfit(subdata(:, regressors), subdata(:, 3), 'binomial', 'link', 'logit');
 hold on
-yfit(:, i) = glmval(bg(:, i), linspace(min(regressorRange), max(regressorRange))', 'logit', 'size', 1);
+[yfit(:, i), yhi(:, i), ylo(:, i)] = glmval(bg(:, i), linspace(min(regressorRange), max(regressorRange))', 'logit', STATS(:, i), 'simultaneous', 'true');
+intercept(i)=(0-bg(1, i))/bg(2, i);
+
+
+boundedline(linspace(min(regressorRange), max(regressorRange))', yfit(:, i), [yhi(:, i), ylo(:, i)], 'cmap', april(round(length(april)/(length(plotterRange)+1))*i+2, :), 'alpha')
+
 plot(linspace(min(regressorRange), max(regressorRange))', yfit(:, i), 'Color', april(round(length(april)/(length(plotterRange)+1))*i+2, :))
-legend(num2str(plotterRange(i)))
+% legend(num2str(plotterRange(i)))
 hold on
 plot(regressorRange, result(:, i), '*', 'Color', april(round(length(april)/(length(plotterRange)+1))*i+2, :))
 l=line([min(regressorRange), max(regressorRange)], [0.5, 0.5]);
@@ -25,4 +30,3 @@ ylim([0 1])
 xlabel('Delay/s');
 ylabel('Preference for left side');
 end
-

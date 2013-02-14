@@ -2,8 +2,9 @@ a=0:0.01:1;
 global april
 
 april=[1-a', a', a'];
-% close all
+close all
 
+%% clean up directory and find all files in range
 F=0;
 delete '.DS_Store';
 D = dir;
@@ -39,6 +40,7 @@ indrange2=info(ismember(info(:, 2),day), 3);
 indrange=intersect(indrange, indrange2);
 end
 
+%% extract each file and append data below existing data matrix
 data=[];
 
 
@@ -46,7 +48,7 @@ data=[];
 
 for m=1: length(indrange)
 
-filename=D(indrange(m)+2).name   
+filename= D(indrange(m)+2).name   
     
 
 [e, a]=extractOlfData(filename);
@@ -67,7 +69,7 @@ leftRewardSize=e.leftRewardSizeTotal(a.validTrials)/0.03;
 rightRewardSize=e.rightRewardSizeTotal(a.validTrials)/0.03;
 
 
-data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay)];
+data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize];
 % 
 % [leftSide, rightSide, delayDiffSide, delayRatioSide]=odorDelayPlot(leftDelay, rightDelay, side);
 % title(filename)
@@ -76,6 +78,8 @@ data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.valid
 
 a.rewardCollected
 end
+
+
 f=figure(F+1)
 set(f, 'Position', [0, 0, 750, 800])
 
@@ -249,8 +253,22 @@ xlabel('Fixed Left Delay')
 ylabel('Indifferent Right Delay')
 
 %%
-figure
-plotGlmThings(data, 8, 4)
+
+f=figure(F+5)
+set(f, 'Position', [0, 0, 750, 300])
+subplot(121)
+[bg,DEV,STATS, intercept]=plotGlmThings(data, 1, 2);
+subplot(122)
+hold on
+
+[bf, bintf, rf, rintf, statsf]= regress(intercept', [ones(length(leftDelayFixed),1), leftDelayFixed]);
+xf=min(leftDelayFixed):1:max(leftDelayFixed);
+lf=plot(xf, bf(1)+bf(2).*xf);
+xlim([0, max(leftDelayFixed)])
+ylim([0, max(leftDelayFixed)])
+plot(leftDelayFixed, intercept, 'o')
+plot(leftDelayFixed, intercept, '*')
+
 %%
 % 
 % f=figure;
