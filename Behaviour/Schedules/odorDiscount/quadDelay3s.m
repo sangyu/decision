@@ -4,7 +4,7 @@ scheduleData.LR=0;
 scheduleData.bigSize=1;
 scheduleData.smallSize=1;
 
-scheduleData.N=250;
+scheduleData.N=300;
 unitaryArray = ones(scheduleData.N, 1);
 
 
@@ -19,46 +19,37 @@ scheduleData.leftValveDuration = 0.03 * unitaryArray;
 scheduleData.rightPokeDelay = 0.1*unitaryArray;
 scheduleData.rightValveDuration = 0.03 * unitaryArray;
 
-COC2=ceil(rand(size([unitaryArray; unitaryArray]))*6);
-COC1=ceil(rand(size([unitaryArray; unitaryArray]))*6);
-% C3=COC1-COC2;
-% COC1(C3==0)=[];
-% COC2(C3==0)=[];
-choiceOfCue1=COC1(1:scheduleData.N);
-choiceOfCue2=COC2(1:scheduleData.N);
 
-scheduleData.odor1Valve = ones(size(choiceOfCue1));
-scheduleData.odor2Valve = 6*ones(size(choiceOfCue2));
+choiceOfCue=ceil(rand(size(unitaryArray))*4);
 
 
-scheduleData.left = unitaryArray;
-scheduleData.right = unitaryArray;
+scheduleData.odor1Flow= 60*unitaryArray;
+% channel 2: caproic (left)
+% channel 3: citral(left)
+% channel 4: hexanol (right)
+% channel 5: menthol(right)
+
+scheduleData.odor1Valve = 0*unitaryArray;
 
 
-
-scheduleData.odor1Flow(choiceOfCue1 == 1) = 100;
-scheduleData.odor1Flow(choiceOfCue1 == 2) = 80;
-scheduleData.odor1Flow(choiceOfCue1 == 3) = 60;
-scheduleData.odor1Flow(choiceOfCue1 == 4) = 40;
-scheduleData.odor1Flow(choiceOfCue1 == 5) = 20;
-scheduleData.odor1Flow(choiceOfCue1 == 6) = 0;
-
-scheduleData.odor1Flow=scheduleData.odor1Flow';
-scheduleData.leftRewardDelay=scheduleData.odor1Flow/10;
+scheduleData.odor1Valve(choiceOfCue == 1) = 1;
+scheduleData.odor1Valve(choiceOfCue == 2) = 2;
+scheduleData.odor1Valve(choiceOfCue == 3) = 3;
+scheduleData.odor1Valve(choiceOfCue == 4) = 4;
 
 
+scheduleData.left = 0*unitaryArray;
+scheduleData.right = 0*unitaryArray;
+scheduleData.left(choiceOfCue == 1)= 1;
+scheduleData.left(choiceOfCue == 2)= 1;
+scheduleData.right(choiceOfCue == 3)= 1;
+scheduleData.right(choiceOfCue == 4)= 1;
 
-scheduleData.odor2Flow(choiceOfCue2 == 1) = 100;
-scheduleData.odor2Flow(choiceOfCue2 == 2) = 80;
-scheduleData.odor2Flow(choiceOfCue2 == 3) = 60;
-scheduleData.odor2Flow(choiceOfCue2 == 4) = 40;
-scheduleData.odor2Flow(choiceOfCue2 == 5) = 20;
-scheduleData.odor2Flow(choiceOfCue2 == 6) = 0;
+scheduleData.leftRewardDelay= 0*unitaryArray;
+scheduleData.rightRewardDelay= 0*unitaryArray;
+scheduleData.leftRewardDelay(choiceOfCue == 2)=3;
+scheduleData.leftRewardDelay(choiceOfCue == 4)=3;
 
-scheduleData.odor2Flow=scheduleData.odor2Flow';
-scheduleData.rightRewardDelay=scheduleData.odor2Flow/10;
-
-scheduleData.delayDiff=scheduleData.leftRewardDelay-scheduleData.rightRewardDelay;
 
 
 scheduleData.bigRewardMatrix=ones(scheduleData.N,scheduleData.bigSize);
