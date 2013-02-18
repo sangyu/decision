@@ -1,5 +1,4 @@
 function [leftSide, rightSide, delayDiffSide, delayRatioSide, xyzP]=odorDelayPlot(data)
-global april
 
 leftDelay=data(:, 1);
 rightDelay=data(:, 2);
@@ -48,7 +47,7 @@ subplot(2,2, 1)
 hold on
 plot(leftDelaySet, odor(:, 2), 'b*-')
 plot(leftDelaySet, odor(:, 4), 'r*-')
-plot(leftDelaySet, mean([odor(:, 2), odor(:, 4)], 2), 'k*-')
+% plot(leftDelaySet, mean([odor(:, 2), odor(:, 4)], 2), 'k*-')
 legend('Left', 'Right')
 l=line([0 max(leftDelaySet)], [0.5, 0.5]);
 set(l, 'Color', [.8, .8, .8])
@@ -63,11 +62,13 @@ ylabel('Preference');
 
 subplot(2,2, 2)
 
-plotGlmThings(data, 8, 10)
-
+plotLogitThings(data, 8, 10)
+xlabel('Left Delay - Right Delay/s');
+ylabel('Preference for left side');
 subplot(2, 2, 3)
-plotGlmThings(data, 9, 4)
-
+plotLogitThings(data, 9, 4)
+xlabel('left Delay/(Left Delay+Right Delay)/s');
+ylabel('Preference for left side');
 plot([min(delayRatioSet), max(delayRatioSet)], [0.5, 0.5], 'Color', [.8, .8, .8])
 ylim([0 1])
 xlabel('Delay Ratio');
@@ -92,7 +93,7 @@ xyz1=[(i-1)/30, (j-1)/30, diag(xyzS1(i, j))];
 
 subplot(2, 2, 4)
 xyzP=[xyz(:, 1:2), xyz1(:, 3)./xyz(:, 3)];
-c=colormap(april);
+c=colormap(april(100));
 for i=1:length(xyz)
     hold on
     plot(xyz(i, 1), xyz(i, 2), '.', 'Color', c(round(xyzP(i, 3)*(length(c)-1))+1, :), 'MarkerSize', xyz(i, 3)*2000/sum(xyz(:, 3)))

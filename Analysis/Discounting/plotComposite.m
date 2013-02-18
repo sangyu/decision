@@ -63,11 +63,11 @@ subplot(252)
 set(gca, 'FontSize', 8)
 hold on
 plot([-lookback: lookforward],summary.meanLongTrend*100, '.-', 'LineWidth',1.5,'Color',[.3 .2 .6] )
-plot([-lookback: lookforward],summary.stdDayLongTrend*100+summary.meanLongTrend*100, '-', 'Color',[.4 .3 .7] )
-plot([-lookback: lookforward],summary.meanLongTrend*100-summary.stdDayLongTrend*100, '-', 'Color',[.4 .3 .7] )
-line([0, 0], [0, 100])
+% plot([-lookback: lookforward],summary.stdDayLongTrend*100+summary.meanLongTrend*100, '-', 'Color',[.4 .3 .7] )
+% plot([-lookback: lookforward],summary.meanLongTrend*100-summary.stdDayLongTrend*100, '-', 'Color',[.4 .3 .7] )
+line([0, 0], [-100, 100])
 xlim([-lookback lookforward])
-ylim([0 100])
+ylim([0,100])
 t=text(-6, 10, num2str(length(summary.longTrend(1,:))));
 set(t, 'FontSize', 15, 'LineWidth', 1, 'Color', 'r')
 title('Percentage choosing the initially short reward')
@@ -85,11 +85,11 @@ subplot(257)
 set(gca, 'FontSize', 8)
 hold on
 plot([-lookback: lookforward],summary.meanBigTrend*100, '.-', 'LineWidth',1.5,'Color',[.3 .2 .6] )
-plot([-lookback: lookforward],summary.stdDayBigTrend*100+summary.meanBigTrend*100, '-', 'Color',[.4 .3 .7] )
-plot([-lookback: lookforward],summary.meanBigTrend*100-summary.stdDayBigTrend*100, '-', 'Color',[.4 .3 .7] )
-line([0, 0], [0, 100])
-xlim([-lookback  lookforward])
-ylim([0 100])
+% plot([-lookback: lookforward],summary.stdDayBigTrend*100+summary.meanBigTrend*100, '-', 'Color',[.4 .3 .7] )
+% plot([-lookback: lookforward],summary.meanBigTrend*100-summary.stdDayBigTrend*100, '-', 'Color',[.4 .3 .7] )
+line([0, 0], [-100, 100])
+xlim([-lookback 20])
+ylim([0,100])
 t=text(-6, 10, num2str(length(summary.bigTrend(1,:))));
 set(t, 'FontSize', 15, 'LineWidth', 1, 'Color', 'r')
 
@@ -101,6 +101,11 @@ axis square
 grid on
 hold off
 
+catch ME
+end
+
+
+try
 
 
 

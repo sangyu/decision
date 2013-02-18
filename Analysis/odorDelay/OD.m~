@@ -257,7 +257,7 @@ ylabel('Indifferent Right Delay')
 f=figure(F+5)
 set(f, 'Position', [0, 0, 750, 300])
 subplot(121)
-[bg,DEV,STATS, intercept]=plotLogitThings(data, 1, 2);
+[bg,DEV,STATS, intercept]=plotLogitThings(data, 2, 1);
 xlabel('Delay/s');
 ylabel('Preference for left side');
 subplot(122)
