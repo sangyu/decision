@@ -30,7 +30,8 @@ opts.Upper = [Inf Inf];
 
 % Plot fit with data.
 h = plot( fitresult, 'k') 
-set(h, 'Color', c, 'LineWidth', 1.5)
+set(h, 'Color', c, 'LineWidth', 1)
+grid off
 legend off
 % Label axes
 xlabel( 'delay/s' );

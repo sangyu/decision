@@ -208,7 +208,7 @@ trialno=exptSetup.trialNo(allTrials);
 
 
 for i=1:length(all)
-    c=[];
+    c=[0, 0];
         for j=1:20
       
             try
@@ -227,11 +227,10 @@ for i=1:length(all)
                     end
                     continue
                 case{'CenterPokeOut'}
-                    cVout=time(all(i)-j);
+                    c=[c; 0, time(all(i)-j)];
                     continue
                 case{'CenterPokeIn'}
-                    cVin=time(all(i)-j);
-                    c=[cVin, cVout; c];
+                    c=[c;  time(all(i)-j), 0];
                     continue
                  case {'TrialStarted'}
                     trialStartTime(i)=time(all(i)-j);                    
@@ -243,9 +242,11 @@ for i=1:length(all)
             catch ME
             end
         end
-        cvalid(i, 1)=length(c(:, 1));
-        cvalid(i, 2)=sum(diff(c, 1, 2));
-        travelTime(i)=-c(end)+rIn(i)+lIn(i);
+        cvalid(i;1)=length(find(c(:, 1)));
+        for t=2:length(c(:, 2))-1
+        cvalid(i;2)=cvalid(i, 2)+c(t, 2)-c(t+1, 1);
+        end
+        travelTime(i)=-c(2, 2)+rIn(i)+lIn(i);
 end
 
 
@@ -286,14 +287,13 @@ cvalid(toDelete)=[];
 travelTime(toDelete)=[];
 side(toDelete, :)=[];
 
-travelTime(timeoutTrials)=0;
 toDelete=find(rewardTrials==length(exptSetup.left));
 rewardTrials(toDelete)=[];
 rewardDelay(length(rewardTrials)+1:end)=[];
 
 action=struct;
 action = setfield(action, 'score', score);
-action = setfield(action, 'cvalid', cvalid);
+action = setfield(action, 'cvalid', cvalid');
 action = setfield(action, 'travelTime', travelTime);
 action = setfield(action, 'side', side);
 action = setfield(action, 'validTrials', allTrials);

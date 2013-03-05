@@ -1,7 +1,4 @@
-a=0:0.01:1;
-global april
 
-april=[1-a', a', a'];
 close all
 
 %% clean up directory and find all files in range
@@ -69,7 +66,7 @@ leftRewardSize=e.leftRewardSizeTotal(a.validTrials)/0.03;
 rightRewardSize=e.rightRewardSizeTotal(a.validTrials)/0.03;
 
 
-data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize];
+data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize, 2*e.cueSampledTTL(a.validTrials)+e.cueOnTTL(a.validTrials)];
 % 
 % [leftSide, rightSide, delayDiffSide, delayRatioSide]=odorDelayPlot(leftDelay, rightDelay, side);
 % title(filename)
@@ -254,13 +251,13 @@ ylabel('Indifferent Right Delay')
 
 %%
 
-f=figure(F+5)
-set(f, 'Position', [0, 0, 750, 300])
-subplot(121)
-[bg,DEV,STATS, intercept]=plotLogitThings(data, 1, 2);
+f=figure(5)
+set(f, 'Position', [0, 0, 1200, 300])
+subplot(131)
+[gof,intercept]=plotHyperThings(data, 1, 2);
 xlabel('Delay/s');
 ylabel('Preference for left side');
-subplot(122)
+subplot(132)
 hold on
 
 [bf, bintf, rf, rintf, statsf]= regress(intercept', [ones(length(leftDelayFixed),1), leftDelayFixed]);
@@ -270,6 +267,12 @@ xlim([0, max(leftDelayFixed)])
 ylim([0, max(leftDelayFixed)])
 plot(leftDelayFixed, intercept, 'ko')
 plot(leftDelayFixed, intercept, 'k*')
+
+subplot(133)
+[bg,DEV,STATS, intercept]=plotLogitThings(data, 8, 11);
+xlabel('Delay/s');
+ylabel('Preference for left side');
+%%
 
 %%
 % 

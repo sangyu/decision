@@ -1,4 +1,4 @@
-function [bg,DEV,STATS, intercept]=plotLogitThings(data, regressor, plotter)
+function [gof, intercept]=plotHyperThings(data, regressor, plotter)
 %
 if plotter==0
 plotterRange=1;
@@ -19,12 +19,9 @@ for i=1:length(plotterRange)
     regressorInd=find(subdata(:, regressor)==regressorRange(j));
     result(j, i)=mean(subdata(regressorInd, 3));
     end
-[bg(:, i),DEV(:, i),STATS(:, i)] = glmfit(subdata(:, regressor), subdata(:, 3), 'binomial', 'link', 'logit');
-hold on
-[yfit(:, i), yhi(:, i), ylo(:, i)] = glmval(bg(:, i), linspace(min(regressorRange), max(regressorRange))', 'logit', STATS(:, i), 'simultaneous', 'true');
-intercept(i)=(0-bg(1, i))/bg(2, i);
-% boundedline(linspace(min(regressorRange), max(regressorRange))', yfit(:, i), [yhi(:, i), ylo(:, i)], 'cmap', c(i, :), 'alpha')
-plot(linspace(min(regressorRange), max(regressorRange))', yfit(:, i), 'Color', c(i, :))
+[fitresult, gof] = generateHypFit1(regressorRange, result(:, i), c(i, :))
+intercept(i)=(fitresult.a/0.5-1)/fitresult.k;
+
 hold on
 plot(regressorRange, result(:, i), '*', 'Color', c(i, :))
 

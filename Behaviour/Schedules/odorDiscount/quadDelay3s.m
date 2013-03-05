@@ -48,7 +48,7 @@ scheduleData.right(choiceOfCue == 4)= 1;
 scheduleData.leftRewardDelay= 0*unitaryArray;
 scheduleData.rightRewardDelay= 0*unitaryArray;
 scheduleData.leftRewardDelay(choiceOfCue == 2)=3;
-scheduleData.leftRewardDelay(choiceOfCue == 4)=3;
+scheduleData.rightRewardDelay(choiceOfCue == 4)=3;
 
 
 
