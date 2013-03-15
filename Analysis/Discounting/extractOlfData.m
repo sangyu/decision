@@ -198,6 +198,7 @@ trialStarted=find(ismember(events, 'TrialStarted'));
 
 cvalid = zeros(length(allTrials),2);
 travelTime=zeros(length(allTrials), 1);
+reactionTime=zeros(length(allTrials), 1);
 side=zeros(length(allTrials), 2);
 trialStartTime=zeros(length(allTrials), 1);
 trailAvailTime=zeros(length(allTrials), 1);
@@ -246,6 +247,7 @@ for i=1:length(all)
         cvalid(i, 1)=length(c(:, 1));
         cvalid(i, 2)=sum(diff(c, 1, 2));
         travelTime(i)=-c(end)+rIn(i)+lIn(i);
+        reactionTime(i)= -trialStartTime(i)+rIn(i)+lIn(i)
 end
 
 
@@ -287,6 +289,7 @@ travelTime(toDelete)=[];
 side(toDelete, :)=[];
 
 travelTime(timeoutTrials)=0;
+reactionTime(timeoutTrials)=0;
 toDelete=find(rewardTrials==length(exptSetup.left));
 rewardTrials(toDelete)=[];
 rewardDelay(length(rewardTrials)+1:end)=[];
@@ -295,6 +298,7 @@ action=struct;
 action = setfield(action, 'score', score);
 action = setfield(action, 'cvalid', cvalid);
 action = setfield(action, 'travelTime', travelTime);
+action = setfield(action, 'reactionTime', reactionTime);
 action = setfield(action, 'side', side);
 action = setfield(action, 'validTrials', allTrials);
 action = setfield(action, 'rewardTrials', rewardTrials);
