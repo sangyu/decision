@@ -11,35 +11,39 @@ C=[0, 0];
 L=[0, 0];
 R=[0, 0];
 
+delete '.DS_Store';
 D = dir;
 
-
-% Engine
-% S = [D(:).name]; % you may want to eliminate . and .. first.
-% [S,S] = sort(S);
-% S = {D(S).name}; % Cell array of names in order by datenum.
-td=[];
-
-for i=1:length(D)
-    if length(D(i).name)<5
-        td=[td; i];
-    end
-    
+info=zeros(length(D), 3);
+for i=3:length(D)
+    info(i, 1)=str2num(D(i).name(4:6));
+    info(i, 2)=D(i).datenum;
 end
-D(td)=[];
-        
-n=length(D);
-%     filename=D(1).name;
-%     
-%     [exptSetup, action]=extractOlfData(filename);
-% activePorts={input('activeport=', 's')};
-% inactivePorts={setdiff( allPorts, activePorts)};
-% for j=1:length(allPorts)
-%     pokes=eval(port(allPorts{j}));
-% assignin('base', allPorts{j}, [eval(allPorts{j});pokes, ones(length(pokes), 1)*ismember(allPorts{j}, activePorts)])
-% end
-% 
 
+info(1:2, :)=[];
+info(:, 2)=info(:, 2)-min(info(:, 2))+1;
+info(:, 3)=[1:length(info(:, 1))];
+
+[info(:, 2), I]=sort(info(:, 2));
+info(:, 2)=round(info(:, 2));
+info(:, 1)=info(I, 1);
+info(:, 3)=info(I, 3);
+
+mouse=input('which mouse ');
+day=input('which day ');
+
+
+if mean(day)==0 && mean(mouse)~=0
+indrange=info(ismember(info(:, 1), mouse), 3);
+elseif mean(mouse)==0 && mean(day)~=0
+indrange=info(ismember(info(:, 2),day), 3);
+elseif mean(mouse)==0 && mean(day)==0
+    indrange=info(:, 3);
+else
+indrange=info(ismember(info(:, 1), mouse), 3);
+indrange2=info(ismember(info(:, 2),day), 3);
+indrange=intersect(indrange, indrange2);
+end
 
 
 figure
@@ -63,17 +67,22 @@ figure
 % title(' session 1')
 
 
-for i=1:n
-    filename=D(i).name
-    i
+
+for i=1: length(indrange)
+n=length(D);
+
+filename= D(indrange(i)+2).name   
+    
+    
     [exptSetup, action]=extractOlfDataStim(filename);
     m=max([C( end, 1), L(end, 1), R(end,1)]);
 %     r=length(action.centerIn)/(length(action.leftIn)+length(action.rightIn))/2;
-activePorts={input('activeport1=', 's'), input('activeport2=', 's')};
-if ismember(activePorts(2), 'N')|ismember(activePorts(1), activePorts(2))
-    activePorts(2)=[];
-end
-    
+% activePorts={input('activeport1=', 's'), input('activeport2=', 's')};
+activePorts={input('activeport1=', 's')};
+% if ismember(activePorts(2), 'N')|ismember(activePorts(1), activePorts(2))
+%     activePorts(2)=[];
+% end
+%     
 
 inactivePorts=setdiff(allPorts, activePorts);
 for j=1:length(allPorts)
@@ -107,7 +116,7 @@ xlabel('time/min')
 % ylabel('cumulative number of pokes')
 xlim([ 0 max([action.centerIn ;action.leftIn; action.rightIn])/60-min([action.centerIn ;action.leftIn; action.rightIn])/60+10])
 
-ylim([0 200])
+ylim([0 100])
 hold off
 
 

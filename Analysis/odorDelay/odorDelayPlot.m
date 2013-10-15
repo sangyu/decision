@@ -62,11 +62,11 @@ ylabel('Preference');
 
 subplot(2,2, 2)
 
-plotLogitThings(data, 8, 10)
+plotLogitThings(data, 3, 8, 10, 1)
 xlabel('Left Delay - Right Delay/s');
 ylabel('Preference for left side');
 subplot(2, 2, 3)
-plotLogitThings(data, 9, 4)
+plotLogitThings(data, 3, 9, 4, 1)
 xlabel('left Delay/(Left Delay+Right Delay)/s');
 ylabel('Preference for left side');
 plot([min(delayRatioSet), max(delayRatioSet)], [0.5, 0.5], 'Color', [.8, .8, .8])

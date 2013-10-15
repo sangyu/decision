@@ -99,7 +99,7 @@ for i=1:length(newtrial_index)
     end
 end
 
-toDelete=[toDelete; newtrial_index; finished_index; available_index; nextCue_index; odor];
+toDelete=[toDelete; newtrial_index; finished_index;  nextCue_index; odor];
 events([toDelete], :) = [];
 events(end,:) = [];
 if length(trialno)<toDelete(end)
@@ -189,6 +189,7 @@ timeMatrix(find(timeMatrix(:, 2)==0), :)=[];
 rewardDelay=timeMatrix(:, 2)-timeMatrix(:, 1);
 
 trialStarted=find(ismember(events, 'TrialStarted'));
+trialAvailable=find(ismember(events, 'TrialAvailable'));
 
 
 % trialno=exptSetup.trialNo(trialStarted);
@@ -201,7 +202,7 @@ travelTime=zeros(length(allTrials), 1);
 reactionTime=zeros(length(allTrials), 1);
 side=zeros(length(allTrials), 2);
 trialStartTime=zeros(length(allTrials), 1);
-trailAvailTime=zeros(length(allTrials), 1);
+trialAvailTime=zeros(length(allTrials), 1);
 rIn=zeros(length(allTrials), 1);
 lIn=zeros(length(allTrials), 1);
 
@@ -210,7 +211,7 @@ trialno=exptSetup.trialNo(allTrials);
 
 for i=1:length(all)
     c=[];
-        for j=1:20
+        for j=1:25
       
             try
             event=events{all(i)-j, 1};
@@ -247,7 +248,7 @@ for i=1:length(all)
         cvalid(i, 1)=length(c(:, 1));
         cvalid(i, 2)=sum(diff(c, 1, 2));
         travelTime(i)=-c(end)+rIn(i)+lIn(i);
-        reactionTime(i)= -trialStartTime(i)+rIn(i)+lIn(i)
+        reactionTime(i)= c(end)-max(trialAvailTime(i), c(1));
 end
 
 
@@ -299,6 +300,8 @@ action = setfield(action, 'score', score);
 action = setfield(action, 'cvalid', cvalid);
 action = setfield(action, 'travelTime', travelTime);
 action = setfield(action, 'reactionTime', reactionTime);
+action = setfield(action, 'trialAvailTime', trialAvailTime);
+action = setfield(action, 'trialStartTime', trialStartTime);
 action = setfield(action, 'side', side);
 action = setfield(action, 'validTrials', allTrials);
 action = setfield(action, 'rewardTrials', rewardTrials);
