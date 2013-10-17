@@ -15,7 +15,7 @@ D = dir;
 info=zeros(length(D), 3);
 for i=3:length(D)
     info(i, 1)=str2num(D(i).name(4:6));
-    info(i, 2)=D(i).datenum;
+    info(i, 2)=datenum(D(i).name(8:15), 'dd-mm-yy');
 end
 
 info(1:2, :)=[];
@@ -70,7 +70,7 @@ rightRewardSize=e.rightRewardSizeTotal(a.validTrials)/0.03;
 infoMouse=[infoMouse; info(info(:, 3)==indrange(m),:)];
 
 
-data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize, 3*e.leftDecisionTTL(a.validTrials)+2*e.cueSampledTTL(a.validTrials)+e.cueOnTTL(a.validTrials), a.travelTime(a.validTrials), a.reactionTime(a.validTrials)];
+data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize, 3*e.leftDecisionTTL(a.validTrials)+2*e.cueSampledTTL(a.validTrials)+e.cueOnTTL(a.validTrials), a.travelTime(a.validTrials-min(a.validTrials)+1), a.reactionTime(a.validTrials-min(a.validTrials)+1)];
 % 
 % [leftSide, rightSide, delayDiffSide, delayRatioSide]=odorDelayPlot(leftDelay, rightDelay, side);
 % title(filename)
@@ -78,44 +78,41 @@ data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.valid
 % plot(delayDiffSet, delayD(:, 1)./delayD(:, 2),'o',delayDiffSet,yfit./delayD(:, 2),'-','LineWidth',2)
 assignin('base', ['info' e.mouseID(end-2:end)], infoMouse);
 assignin('base', ['data' e.mouseID(end-2:end)], data);
-save(['/Users/xusangyu/MatFiles/' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
+save(['C:\Users\user\Desktop\OD\MatFiles\' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
 a.rewardCollected
+a.rewardPokeOut
 end
 %%
 %shape data
 
 close all
 data=[];
-bigSize=1;
-stimTime=0;
+bigSize=2;
+stimTime=2;
 f=pwd;
-mice =389
-% mice=[386, 387, 389];
-% mice=[386, 387, 389,388, 390]
-% mice=330
-% mice=[346, 347, 353, 343, 341]
-% 
-% mice=[330, 345, 350]
-% 
-% mice=352
+mice =[381];
+runSessionsStart=1;
 
 
-
-for j=1:length(mice)
-    info1=eval(['info',num2str(mice(j))]);
+for j=1:length(mice)    
+    info1=eval(['info',num2str(mice(j))])
     data1=eval(['data', num2str(mice(j))]);
     days=[max(info1(:, 2))-200:max(info1(:, 2))]';
-    [c, ia]=intersect(info1(:, 2), days);
+    c=intersect(info1(:, 2), days);
+    ia=[];
+    for i=1:length(c)
+    ia=[ia; find(info1(:, 2)==c(i))];
+    end
     sessions=intersect(intersect(find(info1(:, 4)==bigSize), find(info1(:, 5)==stimTime)), ia)
 %     sessions=intersect(find(info1(:, 5)==stimTime), ia);
-    for i=1:length(sessions)
-        data=[data; data1(find(data1(:,7)==sessions(i)), :)];  
+    for i=runSessionsStart:length(sessions)
+data=[data; data1(find(data1(:,7)==sessions(i)), :)];  
     end
 end
 numberOfTrials=length(data)
   
 f1=figure(1);
-set(f1, 'Position', [500, 500,1100, 500])
+set(f1, 'Position', [200, 200,1100, 500])
 
 
 subplot(121)
@@ -153,7 +150,7 @@ print('-depsc','-r200',['#' num2str(mice) '_preference_bigsize', num2str(num2str
 
 
 f2=figure(2);
-set(f2, 'Position', [500, 500,1100, 500])
+set(f2, 'Position', [200, 200,1100, 500])
 subplot(121)
 plotLinThings(data, 12,  8, 11, 1)
 xlabel('(Left Delay-Right Delay)/s');
@@ -198,7 +195,7 @@ print('-depsc','-r200',['#' num2str(mice) '_tvltime_bigsize', num2str(num2str(bi
 
 
 f3=figure(3);
-set(f3, 'Position', [500, 500,1100, 500])
+set(f3, 'Position', [200, 200,1100, 500])
 subplot(121)
 plotLinThings(data, 13,  8, 11, 1)
 xlabel('(Left Delay-Right Delay)/s');
@@ -248,7 +245,7 @@ mouse=mice
 [leftSide, rightSide, delayDiffSide, delayRatioSide, xyzP]=odorDelayPlot(data);
 figure(1)
 suptitle(num2str(mouse))
-%%
+
 figure(2)
 subplot(331)
 qqplot(actualDelay, leftDelay)
@@ -293,7 +290,7 @@ subplot(339)
 ylim([0, 70])
 
 plotHist(actualDelay, 0.5, 'b', 'b', 1);
-%%
+
 f3=figure(3);
 set(f3, 'Position', [600, 600, 1000, 250])
 
@@ -335,7 +332,7 @@ title('distribution of residuals')
 
 subplot(133)
 qqplot(R)
-%%
+
 xxx=data(:, 1:2);
 yyy=data(:, 3);
 [bg,DEV,STATS] = glmfit(xxx, yyy, 'binomial', 'link', 'logit')
@@ -413,7 +410,7 @@ set(l2, 'Color', [.8, .8, .8])
 xlabel('Fixed Left Delay')
 ylabel('Indifferent Right Delay')
 
-%%
+
 
 f=figure(5);
 set(f, 'Position', [0, 0, 800, 700])
@@ -444,7 +441,7 @@ subplot(224)
 xlabel('Delay/s');
 ylabel('Preference for left side');
 
-%%
+
 figure(6)
 
 [coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');
