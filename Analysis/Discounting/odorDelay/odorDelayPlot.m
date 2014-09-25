@@ -123,14 +123,14 @@ for st= range
     ylim([-2 max(xyz(:, 1)+2)])
 
     try
-    xyzP1=xyzPdiff
+    xyzP1=xyzPdiff;
     xyzPdiff=xyzP-xyzPdiff;
     end
 end
 
     xyzPdiff(:, [1, 2])=xyz(:, [1, 2]);
-    xyzPdiffN=xyzPdiff
-    xyzPdiffN(:, 3)=xyzPdiff(:, 3)./xyzP1(:, 3)
+    xyzPdiffN=xyzPdiff;
+    xyzPdiffN(:, 3)=xyzPdiff(:, 3)./xyzP1(:, 3);
     xyzPdiff=1-(xyzPdiff+0.5);
 
     subplot(222)

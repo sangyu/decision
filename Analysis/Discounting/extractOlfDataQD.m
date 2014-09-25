@@ -3,7 +3,7 @@
 
 
 %% ++++++++ Extraction+++++++ 
-function [exptSetup, action]=extractOlfData(filename)
+function [exptSetup, action]=extractOlfDataQD(filename)
     
 [headerline,schStart, data, textdata] = importOlfFile(filename);
 data(1)=[];
@@ -41,14 +41,14 @@ for i=1:length(schedule)
         markers = [ find(entry =='.', 1), find(entry == ':'), find(entry == '['), find(entry== ']')];
         varname= sprintf('%s', entry(markers(1)+1:markers(2)-1));
         exptSetup = setfield(exptSetup,varname,eval(entry(markers(3):markers(4))));
-    catch me;
+    catch me
     end
     try
         entry=schedule{i};
         markers = [ find(entry =='.', 1), find(entry == ':')];
         varname= sprintf('%s', entry(markers(1)+1:markers(2)-1));
         exptSetup = setfield(exptSetup,varname,str2num(entry(markers(2)+2:end)));
-    catch me;
+    catch me
     end
 end
         l=exptSetup.leftValveDuration;
@@ -127,17 +127,14 @@ reward =find(ismember(events, 'Reward'));
 abort =find(ismember(events, 'Abort'));
 
 centerIn=time(find (ismember(events, 'CenterPokeIn')));
-centerOut=time(find (ismember(events, 'CenterPokeOut')));
 leftIn=time(find (ismember(events, 'LeftPokeIn')));
-leftOut=time(find (ismember(events, 'LeftPokeOut')));
 rightIn=time(find (ismember(events, 'RightPokeIn')));
-rightOut=time(find (ismember(events, 'RightPokeOut')));
-centerOutIndex=find (ismember(events, 'CenterPokeOut'));
-afterC=events(centerOutIndex+1);
+centerOut=find (ismember(events, 'CenterPokeOut'));
+afterC=events(centerOut+1);
 toDelete=[];
 
 abort=find(ismember(events, 'Abort'));
-all=[success; failure; timeout];
+all=[success; failure];
 % all=success;
 all=sort(all);
 
@@ -163,9 +160,7 @@ for i=1:length(afterC)
 end
     afterC(toDelete)=[];
 afterR=[];
-    for i=1:60
-        %here we decide how far to look after reward. some mice poke more
-        %then it'll be an underestimation
+    for i=1:30
         Ri=char(events(reward+i));
     afterR=[afterR, Ri(:, 1)];
     end
@@ -263,7 +258,7 @@ for i=1:length(all)
                     trialAvailTime(i)=time(all(i)-j);                                         
                     break
                 end    
-            catch ME;
+            catch ME
             end
         end
         cvalid(i, 1)=length(c(:, 1));
@@ -277,7 +272,8 @@ end
 score=zeros(length(allTrials), 1);
 score(successTrials)=1;
 score(failureTrials)=0;
-score(timeoutTrials)=-1;
+% score(timeoutTrials)=-1;
+
 
 
 
@@ -315,7 +311,9 @@ else
     uTimeOut=unique(timeoutTrials);
     for i=1:length(uTimeOut)
         td=find(allTrials==uTimeOut(i));
+        try
         td(end)=[];
+        end
         toDelete=[toDelete;td];
     end
 
@@ -332,13 +330,6 @@ toDelete=find(rewardTrials==length(exptSetup.left));
 rewardTrials(toDelete)=[];
 rewardDelay(length(rewardTrials)+1:end)=[];
 
-
-
-discountScore=side(:, 2)==(exptSetup.leftRewardDelay(allTrials)>exptSetup.rightRewardDelay(allTrials));
-discountPref=length(find(discountScore))/length(allTrials);
-
-
-
 action=struct;
 action = setfield(action, 'score', score);
 action = setfield(action, 'cvalid', cvalid);
@@ -351,22 +342,17 @@ action = setfield(action, 'side', side);
 action = setfield(action, 'validTrials', allTrials);
 action = setfield(action, 'rewardTrials', rewardTrials);
 action = setfield(action, 'rewardDelay', rewardDelay);
-action = setfield(action, 'discountScore', discountScore);
 action = setfield(action, 'ITI', ITI);
 % action = setfield(action, 'validTrialNo', trialno(end));
 action = setfield(action, 'centerIn',centerIn);
-action = setfield(action, 'centerOut',centerOut);
 action = setfield(action, 'leftIn', leftIn);
-action = setfield(action, 'leftOut', leftOut);
 action = setfield(action, 'rightIn', rightIn);
-action = setfield(action, 'rightOut', rightOut);
-action = setfield(action, 'rewardCollectedTrials', compareRS');
 action = setfield(action, 'allCenterOut', allCenterOut);
 action = setfield(action, 'effectiveStart', effectiveStart);
 action = setfield(action, 'leftWaste', leftWaste);
 action = setfield(action, 'rightWaste', rightWaste);
 action = setfield(action, 'rewardCollected', rewardCollected);
-action = setfield(action, 'discountPref', discountPref);
+action = setfield(action, 'rewardCollectedTrials', compareRS');
 
 
 end

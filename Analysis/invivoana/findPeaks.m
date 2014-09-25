@@ -2,18 +2,16 @@
 % takes a column of numbers a and finds the maximum of an area that exceeds
 % threshold th, returns the index
 
-function [ind]=findPeaks(a, lowerTh, upperTh, posNeg)
+function [ind, waveforms]=findPeaks(a, lowerTh, upperTh, halfWaveWidth, fs)
 
 %%
-
+posNeg=lowerTh/upperTh>0;
 if posNeg==1
-h=1*max(a);
-betweenTh=[intersect(find(a<=h*upperTh), find(a>=h*lowerTh)); length(a)];
-overTh=[find(a>h*upperTh); length(a)];
+betweenTh=[intersect(find(a<=upperTh), find(a>=lowerTh)); length(a)];
+overTh=[find(a>upperTh); length(a)];
 else
-h=min(a);
-betweenTh=[intersect(find(a>=h*upperTh), find(a<=h*lowerTh)); length(a)];
-overTh=[find(a<h*upperTh); length(a)];
+betweenTh=[intersect(find(a>=upperTh), find(a<=lowerTh)); length(a)];
+overTh=[find(a<upperTh); length(a)];
 end
 segmentBorder=[0; find(diff(betweenTh)>1)];
 peakInd=[];
@@ -39,3 +37,20 @@ peakInd(repeats)=[];
 % plot([0 length(a)],[h*lowerTh, h*lowerTh],  'g')
 % plot([0 length(a)],[h*upperTh, h*upperTh],  'r')
 ind=peakInd;
+halfWaveWidth=halfWaveWidth/1000;
+
+for i=1:length(ind)
+
+    if ind(i)-halfWaveWidth*fs<0
+        waveforms(i, :)=[zeros(1, halfWaveWidth*fs-ind(i)+1), a(1:ind(i)+halfWaveWidth*fs)'];
+    elseif ind(i)+halfWaveWidth*fs>length(a)
+        waveforms(i, :)=[a(ind(i)+halfWaveWidth*fs: end)', zeros(1, halfWaveWidth*fs+ind(i)-length(a)+1),];
+    else
+        waveforms(i, :)=a(ind(i)-halfWaveWidth*fs:ind(i)+halfWaveWidth*fs)';
+    end
+end
+
+
+return
+
+

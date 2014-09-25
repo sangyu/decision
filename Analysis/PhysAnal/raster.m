@@ -1,6 +1,6 @@
 %% raster plot
-sampling=32556;
+sampling=32000;
 numberSpikes=length(TS);
-time=(TS(end)-TS(1))/32556*1000;
-timestamps=[TS-TS(1)]/32556;
+time=(TS(end)-TS(1))/sampling*1000;
+timestamps=[TS-TS(1)]/sampling;
 plot(timestamps, 1, 'r.')

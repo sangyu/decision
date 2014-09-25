@@ -3,7 +3,7 @@
 
 
 %% ++++++++ Extraction+++++++ 
-function [exptSetup, action]=extractOlfData(filename)
+function [exptSetup, action]=extractOlfDataGD(filename)
     
 [headerline,schStart, data, textdata] = importOlfFile(filename);
 data(1)=[];
@@ -122,6 +122,8 @@ exptSetup = setfield(exptSetup,'time',time);
 
 success=find(ismember(events, 'Success'));
 failure=find(ismember(events, 'Failure'));
+nullSuccess=find(ismember(events, 'NullSuccess'));
+nullFailure=find(ismember(events, 'NullFailure'));
 timeout=find(ismember(events, 'Timeout'));
 reward =find(ismember(events, 'Reward'));
 abort =find(ismember(events, 'Abort'));
@@ -137,22 +139,28 @@ afterC=events(centerOutIndex+1);
 toDelete=[];
 
 abort=find(ismember(events, 'Abort'));
-all=[success; failure; timeout];
+all=[success; failure; timeout; nullSuccess; nullFailure];
 % all=success;
 all=sort(all);
 
 successTrials=trialno(success);
 failureTrials=trialno(failure);
+nullSuccessTrials=trialno(nullSuccess);
+nullFailureTrials=trialno(nullFailure);
+
+
 rewardTrials=trialno(reward);
+
+
 timeoutTrials=trialno(timeout);
 allTrials=trialno(all);
-
-while find(diff(rewardTrials)==0)>0
-ind=find(diff(rewardTrials)==0);
-rewardTrials(ind+1)=rewardTrials(ind)+1;
-end
-rewardTrials=rewardTrials-1;
-rewardTrials(1)=1;
+% 
+% while find(diff(rewardTrials)==0)>0
+% ind=find(diff(rewardTrials)==0);
+% rewardTrials(ind+1)=rewardTrials(ind)+1;
+% end
+% rewardTrials=rewardTrials-1;
+% rewardTrials(1)=1;
 
 %%
 
@@ -163,7 +171,7 @@ for i=1:length(afterC)
 end
     afterC(toDelete)=[];
 afterR=[];
-    for i=1:60
+    for i=1:100
         %here we decide how far to look after reward. some mice poke more
         %then it'll be an underestimation
         Ri=char(events(reward+i));
@@ -266,78 +274,74 @@ for i=1:length(all)
             catch ME;
             end
         end
-        cvalid(i, 1)=length(c(:, 1));
-        cvalid(i, 2)=sum(diff(c, 1, 2));
-        travelTime(i)=-c(end)+rIn(i)+lIn(i);
-        reactionTime(i)= c(end)-max(trialAvailTime(i), c(1));
+%         cvalid(i, 1)=length(c(:, 1));
+%         cvalid(i, 2)=sum(diff(c, 1, 2));
+%         travelTime(i)=-c(end)+rIn(i)+lIn(i);
+%         reactionTime(i)= c(end)-max(trialAvailTime(i), c(1));
 end
 
 
 
 score=zeros(length(allTrials), 1);
 score(successTrials)=1;
-score(failureTrials)=0;
-score(timeoutTrials)=-1;
+score(failureTrials)=-1;
+score(timeoutTrials)=0;
+score(nullSuccessTrials)=2;
+score(nullFailureTrials)=-2;
 
 
-
-if length(score)<length(trialno)
-   side(end)=[];
-   travelTime(end)=[];
-   cvalid(end)=[];
-            
-end
-
-trialStartTime=time(trialStarted);
-ITI=diff(trialStartTime);
-
-% ++++++++++ Lookup Table++++++++++++++++++
-% Sides: left(-1), right(1)
-% score: Success (1), Failure (0)
-% exptSetup.left: Odor1(1), Odor2 (0), odor3(2)
-% ++++++++++ Lookup Table++++++++++++++++++
-
-rewardDelay=round(rewardDelay*100)/100;
-    
-exptSetup = setfield(exptSetup, 'trialNo', length(exptSetup.left));
-
-if mean(exptSetup.incrementTrialOnTimeout)>0   
-    toDelete=find(allTrials==length(exptSetup.left));
-    allTrials(toDelete)=[];
-    score(toDelete)=[];
-    cvalid(toDelete)=[];
-    travelTime(toDelete)=[];
-    travelTime(timeoutTrials)=0;
-    reactionTime(timeoutTrials)=0;
-    side(toDelete, :)=[];
-else
-    toDelete=find(allTrials==length(exptSetup.left));
-    uTimeOut=unique(timeoutTrials);
-    for i=1:length(uTimeOut)
-        td=find(allTrials==uTimeOut(i));
-        td(end)=[];
-        toDelete=[toDelete;td];
-    end
-
-    allTrials(toDelete)=[];
-    score(toDelete)=[];
-    cvalid(toDelete)=[];
-    travelTime(toDelete)=[];
-    side(toDelete, :)=[];
-end
-
-
-
-toDelete=find(rewardTrials==length(exptSetup.left));
-rewardTrials(toDelete)=[];
-rewardDelay(length(rewardTrials)+1:end)=[];
-
-
-
-discountScore=side(:, 2)==(exptSetup.leftRewardDelay(allTrials)>exptSetup.rightRewardDelay(allTrials));
-discountPref=length(find(discountScore))/length(allTrials);
-
-
+% 
+% 
+% if length(score)<length(trialno)
+%    side(end)=[];
+%    travelTime(end)=[];
+%    cvalid(end)=[];
+%             
+% end
+% 
+% trialStartTime=time(trialStarted);
+% ITI=diff(trialStartTime);
+% 
+% % ++++++++++ Lookup Table++++++++++++++++++
+% % Sides: left(-1), right(1)
+% % score: Success (1), Failure (0)
+% % exptSetup.left: Odor1(1), Odor2 (0), odor3(2)
+% % ++++++++++ Lookup Table++++++++++++++++++
+% 
+% rewardDelay=round(rewardDelay*100)/100;
+%     
+% exptSetup = setfield(exptSetup, 'trialNo', length(exptSetup.left));
+% 
+% if mean(exptSetup.incrementTrialOnTimeout)>0   
+%     toDelete=find(allTrials==length(exptSetup.left));
+%     allTrials(toDelete)=[];
+%     score(toDelete)=[];
+%     cvalid(toDelete)=[];
+%     travelTime(toDelete)=[];
+%     travelTime(timeoutTrials)=0;
+%     reactionTime(timeoutTrials)=0;
+%     side(toDelete, :)=[];
+% else
+%     toDelete=find(allTrials==length(exptSetup.left));
+%     uTimeOut=unique(timeoutTrials);
+%     for i=1:length(uTimeOut)
+%         td=find(allTrials==uTimeOut(i));
+%         td(end)=[];
+%         toDelete=[toDelete;td];
+%     end
+% 
+%     allTrials(toDelete)=[];
+%     score(toDelete)=[];
+%     cvalid(toDelete)=[];
+%     travelTime(toDelete)=[];
+%     side(toDelete, :)=[];
+% end
+% % 
+% % 
+% 
+% toDelete=find(rewardTrials==length(exptSetup.left));
+% rewardTrials(toDelete)=[];
+% rewardDelay(length(rewardTrials)+1:end)=[];
 
 action=struct;
 action = setfield(action, 'score', score);
@@ -351,8 +355,7 @@ action = setfield(action, 'side', side);
 action = setfield(action, 'validTrials', allTrials);
 action = setfield(action, 'rewardTrials', rewardTrials);
 action = setfield(action, 'rewardDelay', rewardDelay);
-action = setfield(action, 'discountScore', discountScore);
-action = setfield(action, 'ITI', ITI);
+% action = setfield(action, 'ITI', ITI);
 % action = setfield(action, 'validTrialNo', trialno(end));
 action = setfield(action, 'centerIn',centerIn);
 action = setfield(action, 'centerOut',centerOut);
@@ -360,13 +363,12 @@ action = setfield(action, 'leftIn', leftIn);
 action = setfield(action, 'leftOut', leftOut);
 action = setfield(action, 'rightIn', rightIn);
 action = setfield(action, 'rightOut', rightOut);
-action = setfield(action, 'rewardCollectedTrials', compareRS');
 action = setfield(action, 'allCenterOut', allCenterOut);
 action = setfield(action, 'effectiveStart', effectiveStart);
 action = setfield(action, 'leftWaste', leftWaste);
 action = setfield(action, 'rightWaste', rightWaste);
 action = setfield(action, 'rewardCollected', rewardCollected);
-action = setfield(action, 'discountPref', discountPref);
+action = setfield(action, 'rewardCollectedTrials', compareRS');
 
 
 end
@@ -388,7 +390,7 @@ function [headerline,schStart, data, textdata] = importOlfFile(filename)
             pound = tline(1)=='#';
             headerline=headerline+1;
             try
-            if tline(1:4)=='#.LR'
+            if tline(1:17)=='#.centerPokeDelay'
             schStart=headerline;
             end
             catch me

@@ -107,12 +107,12 @@ assignin('base', ['data' e.mouseID(end-2:end)], data);
 
 
 
-% save(['C:\Users\user\Desktop\OD\MatFiles\' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
-a.rewardCollected
-length(a.validTrials)
+save(['C:\Users\user\Desktop\OD\MatFiles\' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
+fprintf(['rewardcollected = ', num2str(a.rewardCollected),  '   discount score = ', num2str(a.discountPref), '\n'])
 end
 
-%
+
+% %
 if mean(info(:,5))>0
 columnAna=input('what column to analyze? ')+10;
 columnIg=input('what column to ignore? ')+10;
@@ -123,11 +123,13 @@ else
     
     columnIg=0; 
 end
- % %
+
+
+% %
 % stimTime=0;
 % columnIg=0;
 % columnAna=16;
-
+%
 mice =mouse;
 
 close all
@@ -150,13 +152,24 @@ for j=1:length(mice)
 data=[data; data1(find(data1(:,7)==sessions(i)), :)];  
     end
 end
-numberOfTrials=length(data)
 
+% 
+% [bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1);
+% bg;
+% pvalue=STATS.p;
+% intercept;
+% 
 
-[bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1)
-bg
-pvalue=STATS.p
-intercept
+if columnIg~=0
+
+diffStim=data(:, 11)-data(:, 12);
+total=data(:, 11)+data(:, 12);
+else
+    diffStim=data(:, 11);
+    total=data(:, 11);
+end
+data=[data, diffStim, total];
+
 
 
 f1=figure(1);
@@ -171,8 +184,8 @@ axis square
 [bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1);
 xlabel('(Left Delay-Right Delay)/s');
 ylabel('Preference for left side');
-bg
-pvalue=STATS.p
+bg;
+pvalue=STATS.p;
 intercept
 try
 for i=1:length(bg(1, :))
@@ -196,7 +209,7 @@ set(l, 'Color', [.8, .8, .8])
 text(3, .85, ['p = ' num2str(round(regressionStats.p(3)*1000)/1000)])
 text(3, .9, ['B = ' num2str(round(regressionStats.beta(3)*1000)/1000)])
 
-[regressionStats.beta, regressionStats.p]
+[regressionStats.beta, regressionStats.p];
 
 xlabel('(Left Delay-Right Delay)/s');
 ylim([0 1])
@@ -212,9 +225,9 @@ dataA=data2(data2(:, 8)>=0, :);
 [bg,DEV,STATS, intercept, result]=plotLogitThings(dataA,3, 8, columnAna, columnIg, 1);
 xlabel('(Left Delay-Right Delay)/s');
 ylabel('Preference for left side');
-bg
-pvalue=STATS.p
-intercept
+bg;
+pvalue=STATS.p;
+intercept;
 try
 for i=1:length(bg(1, :))
 text(3, 1-i*0.1, [num2str(round(bg(2,i)*10000)/10000), '(',num2str(round(STATS.p(2, i)*10000)/10000) ')'])
@@ -241,34 +254,117 @@ suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1
 %
 f=figure(2);
 set(f, 'Position', [0, 0, 750, 800])
-[leftSide, rightSide, delayDiffSide, xyzP, rightD3elayShift, leftDelayShift]=odorDelayPlot(data, columnAna, columnIg);
-
-
-
+[leftSide, rightSide, delayDiffSide, xyzP, rightDelayShift, leftDelayShift]=odorDelayPlot(data, columnAna, columnIg);
 
 
 %%
-    
-figure(3);
+
+
+
+if columnAna~=5
+figure(3)
 subplot(221)
-plotLinThings(data, 13,  8, columnAna, 1)
+axis square
+% [coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');
+% [ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 10, 11], 8, [10, 11]);
+% 
+% [regressionStats.beta, regressionStats.p]
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, 18, 0, 1);
+xlabel('(Left Delay-Right Delay)/s');
+ylabel('Preference for left side');
+bg
+pvalue=STATS.p
+intercept
+try
+for i=1:length(bg(1, :))
+text(3, 1-i*0.1, [num2str(round(bg(2,i)*1000)/1000), '(',num2str(round(STATS.p(2, i)*1000)/1000) ')'])
+text(3, 1-i*0.05, [num2str(round(bg(1,i)*1000)/1000), '(',num2str(round(STATS.p(1, i)*1000)/1000) ')'])
+end
+end
+xlim([-10 10])
+
+
+subplot(222)
+
+hold on
+axis square
+
+[coefficients, deviances, regressionStats] = glmfit(data(:, [8, 18]), data(:, 3), 'binomial', 'link', 'logit');
+[ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 18], 8, 18);
+l=line([-10, 10], [0.5, 0.5]);
+set(l, 'Color', [.8, .8, .8])
+text(3, .85, ['p = ' num2str(round(regressionStats.p(3)*1000)/1000)])
+text(3, .9, ['B = ' num2str(round(regressionStats.beta(3)*1000)/1000)])
+
+[regressionStats.beta, regressionStats.p]
+
+xlabel('(Left Delay-Right Delay)/s');
+ylim([0 1])
+
+
+
+
+
+subplot(223)
+axis square
+% [coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');
+% [ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 10, 11], 8, [10, 11]);
+% 
+% [regressionStats.beta, regressionStats.p]
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, 19, 0, 1);
+xlabel('(Left Delay-Right Delay)/s');
+ylabel('Preference for left side');
+bg
+pvalue=STATS.p
+intercept
+try
+for i=1:length(bg(1, :))
+text(3, 1-i*0.1, [num2str(round(bg(2,i)*1000)/1000), '(',num2str(round(STATS.p(2, i)*1000)/1000) ')'])
+text(3, 1-i*0.05, [num2str(round(bg(1,i)*1000)/1000), '(',num2str(round(STATS.p(1, i)*1000)/1000) ')'])
+end
+end
+xlim([-10 10])
+
+
+subplot(224)
+
+hold on
+axis square
+
+[coefficients, deviances, regressionStats] = glmfit(data(:, [8, 19]), data(:, 3), 'binomial', 'link', 'logit');
+[ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 19], 8, 19);
+l=line([-10, 10], [0.5, 0.5]);
+set(l, 'Color', [.8, .8, .8])
+text(3, .85, ['p = ' num2str(round(regressionStats.p(3)*1000)/1000)])
+text(3, .9, ['B = ' num2str(round(regressionStats.beta(3)*1000)/1000)])
+
+[regressionStats.beta, regressionStats.p]
+
+xlabel('(Left Delay-Right Delay)/s');
+ylim([0 1])
+
+
+end
+
+%%
+
+
+figure(4);
+subplot(221)
+plotLinThings(data, 13,  8, 18, 1)
 xlabel('(Left Delay-Right Delay)/s');
 ylabel('travel time/s')
 
 
 ylim([0 2])
-if columnIg~=0
-
-diff=data(:, columnAna)-data(:, columnIg);
-else
-    diff=data(:, columnAna);
-end
-tvl0=data(diff==0, 13);
-tvl1=data(find(diff==1), 13);
-tvl2=data(find(diff==-1), 13);
-tvl0(tvl0>10)=[];
-tvl1(tvl1>10)=[];
-tvl2(tvl2>10)=[];
+tvl0=data(diffStim==0, 13);
+tvl1=data(find(diffStim==1), 13);
+tvl2=data(find(diffStim==-1), 13);
+tvl0(tvl0>16)=[];
+tvl1(tvl1>16)=[];
+tvl2(tvl2>16)=[];
 tvl0(tvl0<=0)=[];
 tvl1(tvl1<=0)=[];
 tvl2(tvl2<=0)=[];
@@ -299,18 +395,18 @@ suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1
 
 f1=figure(3);
 subplot(223)
-plotLinThings(data, 14,  8, columnAna, 1)
+plotLinThings(data, 14,  8, 18, 1)
 xlabel('(Left Delay-Right Delay)/s');
 ylabel('sampling time/s')
 
 ylim([0 3])
 
-rxn0=data(find(diff==0), 14);
-rxn1=data(find(diff==1), 14);
-rxn2=data(find(diff==-1), 14);
-rxn0(rxn0>10)=[];
-rxn1(rxn1>10)=[];
-rxn2(rxn2>10)=[];
+rxn0=data(find(diffStim==0), 14);
+rxn1=data(find(diffStim==1), 14);
+rxn2=data(find(diffStim==-1), 14);
+rxn0(rxn0>16)=[];
+rxn1(rxn1>16)=[];
+rxn2(rxn2>16)=[];
 rxn0(rxn0<=0.3)=[];
 rxn1(rxn1<=0.3)=[];
 rxn2(rxn2<=0.3)=[];
@@ -336,24 +432,26 @@ suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1
 set(findall(f1,'type','text'), 'fontWeight','bold')
 suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1))), ', big reward=' num2str(bigSize), ' x small reward']);
 
-% print('-depsc','-r200',['C:\Users\user\Desktop\OD\Graphs\#' num2str(mice) '_samptime_bigsize', num2str(num2str(bigSize)), '_laser_', num2str(stimTime)])
+print('-depsc','-r200',['C:\Users\user\Desktop\OD\Graphs\#' num2str(mice) '_samptime_bigsize', num2str(num2str(bigSize)), '_laser_', num2str(stimTime)])
 
 
 
 fprintf('\n\n\nkstests for traveling time\n')
-[h, p]=kstest2(tvl0, tvl1);
-fprintf(['\n tvl0 tvl1 ', num2str([h, p]), '\n'])
 [h, p]=kstest2(tvl0, tvl2);
-fprintf(['\ntvl0 tvl2 ', num2str([h, p]), '\n'])
+fprintf(['\n nostim cueon ', num2str([h, p]), '\n'])
+
+[h, p]=kstest2(tvl0, tvl1);
+fprintf(['\n nostim cuesample ', num2str([h, p]), '\n'])
+
 
 
 fprintf('\n\n\nkstests for sampling time\n')
 [h, p]=kstest2(rxn0,rxn1);
 
-fprintf(['\n rxn0 rxn1 ', num2str([h, p]), '\n'])
-[h, p]=kstest2(rxn0,rxn2);
+fprintf(['\n nostim cueon ', num2str([h, p]), '\n'])
 
-fprintf(['\n rxn0 rxn2 ', num2str([h, p]), '\n'])
+fprintf(['\n nostim cuesample ', num2str([h, p]), '\n'])
+[h, p]=kstest2(rxn0,rxn2);
 
 % 
 % figure(2)
@@ -516,7 +614,7 @@ hold on
 [bf, bintf, rf, rintf, statsf]= regress(rightIndifferent, [ones(length(leftDelayFixed),1), leftDelayFixed]);
 xf=min(leftDelayFixed):1:max(leftDelayFixed);
 lf=plot(xf, bf(1)+bf(2).*xf);
-set (lf, 'Color', 'r')
+set(lf, 'Color', 'r')
 l1=line([min(leftDelayFixed) max(leftDelayFixed)], [0, 0]);
 set(l1, 'Color', [.8, .8, .8])
 l2=line( [0, 0], [min(leftDelayFixed) max(leftDelayFixed)]);

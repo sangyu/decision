@@ -1,0 +1,1231 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>OD</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-07-28"><meta name="DC.source" content="OD.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><pre class="codeinput">set(0,<span class="string">'DefaultAxesFontName'</span>, <span class="string">'Arial'</span>)
+set(0,<span class="string">'DefaultAxesFontSize'</span>, 12)
+
+<span class="comment">% Change default text fonts.</span>
+set(0,<span class="string">'DefaultTextFontname'</span>, <span class="string">'Arial'</span>)
+set(0,<span class="string">'DefaultTextFontSize'</span>, 12)
+
+close <span class="string">all</span>
+
+<span class="comment">% clean up directory and find all files in range</span>
+F=0;
+delete <span class="string">'.DS_Store'</span>;
+D = dir;
+
+info=zeros(length(D), 3);
+<span class="keyword">for</span> i=3:length(D)
+    info(i, 1)=str2num(D(i).name(4:6));
+    info(i, 2)=datenum(D(i).name(8:15), <span class="string">'dd-mm-yy'</span>);
+<span class="keyword">end</span>
+
+info(1:2, :)=[];
+info(:, 2)=info(:, 2)-min(info(:, 2))+1;
+info(:, 3)=[1:length(info(:, 1))];
+
+[info(:, 2), I]=sort(info(:, 2));
+info(:, 2)=round(info(:, 2));
+info(:, 1)=info(I, 1);
+info(:, 3)=info(I, 3);
+
+
+mouse=input(<span class="string">'which mouse '</span>);
+day=input(<span class="string">'which day '</span>);
+bigSize=input(<span class="string">'what big size '</span>);
+
+<span class="keyword">if</span> mean(day)==0 &amp;&amp; mean(mouse)~=0
+indrange=info(ismember(info(:, 1), mouse), 3);
+<span class="keyword">elseif</span> mean(mouse)==0 &amp;&amp; mean(day)~=0
+indrange=info(ismember(info(:, 2),day), 3);
+<span class="keyword">elseif</span> mean(mouse)==0 &amp;&amp; mean(day)==0
+    indrange=info(:, 3);
+<span class="keyword">else</span>
+indrange=info(ismember(info(:, 1), mouse), 3);
+indrange2=info(ismember(info(:, 2),day), 3);
+indrange=intersect(indrange, indrange2);
+<span class="keyword">end</span>
+data=[];
+infoMouse=[];
+<span class="keyword">for</span> m=1: length(indrange)
+
+filename= D(indrange(m)+2).name
+
+
+[e, a]=extractOlfData(filename);
+info(info(:, 3)==indrange(m), 4)=e.bigSize;
+info(info(:, 3)==indrange(m), 5)=max([3*max(e.leftDecisionTTL),1*max(e.cueSampledTTL),2*max(e.cueOnTTL)]);
+info(info(:, 3)==indrange(m), 6)= a.rewardCollected;
+
+odor=[];
+delayD=[];
+
+leftDelay=e.leftRewardDelay(a.validTrials);
+rightDelay=e.rightRewardDelay(a.validTrials);
+s=size(leftDelay);
+<span class="keyword">if</span> s(1)==1
+    leftDelay=leftDelay';
+    rightDelay=rightDelay';
+<span class="keyword">end</span>
+side=a.side(:, 1);
+actualDelay=sum(a.side.*[leftDelay, rightDelay], 2);
+leftRewardSize=e.leftRewardSizeTotal(a.validTrials)/0.03;
+rightRewardSize=e.rightRewardSizeTotal(a.validTrials)/0.03;
+infoMouse=[infoMouse; info(info(:, 3)==indrange(m),:)];
+
+
+leftActualDelay=leftDelay.*side;
+rightActualDelay=rightDelay.*(1-side);
+actualDelaySigned=leftActualDelay-rightActualDelay;
+actualDelay=leftActualDelay+rightActualDelay;
+previousSide=[0; side(1:end-1)];
+previousTrialDelay=[0; actualDelaySigned(1:end-1)];
+
+previousTrialDelayCase=(leftActualDelay&gt;mean(actualDelay))*3-(rightActualDelay&gt;mean(actualDelay))*3;
+case2L=intersect(find(leftActualDelay&gt;0), find(leftActualDelay&lt;=mean(actualDelay)));
+case2R=intersect(find(rightActualDelay&gt;0), find(rightActualDelay&lt;=mean(actualDelay)));
+previousTrialDelayCase(case2L)=2;
+previousTrialDelayCase(case2R)=-2;
+case1=find(previousTrialDelayCase==0);
+case1L=intersect(find(side==1), case1);
+case1R=intersect(find(side==0), case1);
+previousTrialDelayCase(case1L)=1;
+previousTrialDelayCase(case1R)=-1;
+
+previousTrialDelayCase=[1; previousTrialDelayCase(1:end-1)];
+
+
+data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize, e.cueSampledTTL(a.validTrials), e.cueOnTTL(a.validTrials), a.travelTime(a.validTrials-min(a.validTrials)+1), a.reactionTime(a.validTrials-min(a.validTrials)+1), previousTrialDelay, previousTrialDelayCase, previousSide];
+<span class="comment">%</span>
+<span class="comment">% [leftSide, rightSide, delayDiffSide, delayRatioSide]=odorDelayPlot(leftDelay, rightDelay, side);</span>
+<span class="comment">% title(filename)</span>
+
+<span class="comment">% plot(delayDiffSet, delayD(:, 1)./delayD(:, 2),'o',delayDiffSet,yfit./delayD(:, 2),'-','LineWidth',2)</span>
+assignin(<span class="string">'base'</span>, [<span class="string">'info'</span> e.mouseID(end-2:end)], infoMouse);
+assignin(<span class="string">'base'</span>, [<span class="string">'data'</span> e.mouseID(end-2:end)], data);
+
+
+
+save([<span class="string">'C:\Users\user\Desktop\OD\MatFiles\'</span> e.mouseID(end-2:end) <span class="string">'.mat'</span>],[<span class="string">'info'</span> e.mouseID(end-2:end)] , [<span class="string">'data'</span> e.mouseID(end-2:end)])
+a.rewardCollected
+length(a.validTrials)
+<span class="keyword">end</span>
+
+<span class="comment">%</span>
+<span class="keyword">if</span> mean(info(:,5))&gt;0
+columnAna=input(<span class="string">'what column to analyze? '</span>)+10;
+columnIg=input(<span class="string">'what column to ignore? '</span>)+10;
+    stimTime=2;
+<span class="keyword">else</span>
+    columnAna=5;
+    stimTime=0;
+
+    columnIg=0;
+<span class="keyword">end</span>
+<span class="comment">% % %</span>
+<span class="comment">% % stimTime=0;</span>
+<span class="comment">% % columnIg=0;</span>
+<span class="comment">% % columnAna=16;</span>
+
+mice =mouse;
+close <span class="string">all</span>
+ data=[];
+f=pwd;
+runSessionsStart=1;
+
+<span class="keyword">for</span> j=1:length(mice)
+    info1=eval([<span class="string">'info'</span>,num2str(mice(j))]);
+    data1=eval([<span class="string">'data'</span>, num2str(mice(j))]);
+    days=[max(info1(:, 2))-200:max(info1(:, 2))]';
+    c=intersect(info1(:, 2), days);
+    ia=[];
+    <span class="keyword">for</span> i=1:length(c)
+    ia=[ia; find(info1(:, 2)==c(i))];
+    <span class="keyword">end</span>
+    sessions=intersect(intersect(find(info1(:, 4)==bigSize), find(info1(:, 5)==stimTime)), ia);
+    <span class="comment">%     sessions=intersect(find(info1(:, 5)==stimTime), ia);</span>
+ <span class="keyword">for</span> i=runSessionsStart:length(sessions)
+data=[data; data1(find(data1(:,7)==sessions(i)), :)];
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+numberOfTrials=length(data)
+
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1)
+bg
+pvalue=STATS.p
+intercept
+
+
+f1=figure(1);
+
+subplot(221)
+axis <span class="string">square</span>
+<span class="comment">% [coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');</span>
+<span class="comment">% [ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 10, 11], 8, [10, 11]);</span>
+<span class="comment">%</span>
+<span class="comment">% [regressionStats.beta, regressionStats.p]</span>
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1);
+xlabel(<span class="string">'(Left Delay-Right Delay)/s'</span>);
+ylabel(<span class="string">'Preference for left side'</span>);
+bg
+pvalue=STATS.p
+intercept
+<span class="keyword">try</span>
+<span class="keyword">for</span> i=1:length(bg(1, :))
+text(3, 1-i*0.1, [num2str(round(bg(2,i)*1000)/1000), <span class="string">'('</span>,num2str(round(STATS.p(2, i)*1000)/1000) <span class="string">')'</span>])
+text(3, 1-i*0.05, [num2str(round(bg(1,i)*1000)/1000), <span class="string">'('</span>,num2str(round(STATS.p(1, i)*1000)/1000) <span class="string">')'</span>])
+<span class="keyword">end</span>
+<span class="keyword">end</span>
+xlim([-10 10])
+subplot(222)
+hold <span class="string">on</span>
+axis <span class="string">square</span>
+<span class="keyword">if</span> columnIg~=0
+data2=data(data(:, columnIg)==0,:);
+<span class="keyword">else</span>
+    data2=data;
+<span class="keyword">end</span>
+[coefficients, deviances, regressionStats] = glmfit(data2(:, [8, columnAna]), data2(:, 3), <span class="string">'binomial'</span>, <span class="string">'link'</span>, <span class="string">'logit'</span>);
+[ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data2, [8, columnAna], 8, columnAna);
+l=line([-10, 10], [0.5, 0.5]);
+set(l, <span class="string">'Color'</span>, [.8, .8, .8])
+text(3, .85, [<span class="string">'p = '</span> num2str(round(regressionStats.p(3)*1000)/1000)])
+text(3, .9, [<span class="string">'B = '</span> num2str(round(regressionStats.beta(3)*1000)/1000)])
+
+[regressionStats.beta, regressionStats.p]
+
+xlabel(<span class="string">'(Left Delay-Right Delay)/s'</span>);
+ylim([0 1])
+
+
+figure(1)
+
+
+subplot(223)
+axis <span class="string">square</span>
+dataA=data2(data2(:, 8)&gt;=0, :);
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(dataA,3, 8, columnAna, columnIg, 1);
+xlabel(<span class="string">'(Left Delay-Right Delay)/s'</span>);
+ylabel(<span class="string">'Preference for left side'</span>);
+bg
+pvalue=STATS.p
+intercept
+<span class="keyword">try</span>
+<span class="keyword">for</span> i=1:length(bg(1, :))
+text(3, 1-i*0.1, [num2str(round(bg(2,i)*10000)/10000), <span class="string">'('</span>,num2str(round(STATS.p(2, i)*10000)/10000) <span class="string">')'</span>])
+text(3, 1-i*0.05, [num2str(round(bg(1,i)*10000)/10000), <span class="string">'('</span>,num2str(round(STATS.p(1, i)*10000)/10000) <span class="string">')'</span>])
+<span class="keyword">end</span>
+<span class="keyword">end</span>
+
+subplot(224)
+axis <span class="string">square</span>
+[coefficients, deviances, regressionStats] = glmfit(dataA(:, [8, columnAna]), dataA(:, 3), <span class="string">'binomial'</span>, <span class="string">'link'</span>, <span class="string">'logit'</span>);
+[ax, ~, patchHandles]=plotLogisticRegression(coefficients, regressionStats, dataA, [8, columnAna], 8, columnAna);
+[coefficients, deviances, regressionStats] = glmfit(dataA(:, [8, columnAna]), dataA(:, 3), <span class="string">'binomial'</span>, <span class="string">'link'</span>, <span class="string">'logit'</span>);
+[ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, dataA, [8, columnAna], 8, columnAna);
+l=line([-0, 10], [0.5, 0.5]);
+set(l, <span class="string">'Color'</span>, [.8, .8, .8])
+text(3, .85, [<span class="string">'p = '</span> num2str(round(regressionStats.p(3)*10000)/10000)])
+text(3, .9, [<span class="string">'B = '</span> num2str(round(regressionStats.beta(3)*10000)/10000)])
+
+
+
+suptitle([<span class="string">'mouse #'</span> num2str(mice) <span class="string">', number of trials='</span> num2str(length(data(:, 1))), <span class="string">', big reward='</span> num2str(bigSize), <span class="string">' x small reward'</span>]);
+</pre><pre class="codeoutput">Warning: File '.DS_Store' not found. 
+</pre><pre class="codeoutput">Error using input
+Cannot call INPUT from EVALC.
+
+Error in OD (line 33)
+mouse=input('which mouse ');
+</pre><pre class="codeinput">f=figure(2);
+set(f, <span class="string">'Position'</span>, [0, 0, 750, 800])
+[leftSide, rightSide, delayDiffSide, xyzP, rightD3elayShift, leftDelayShift]=odorDelayPlot(data, columnAna, columnIg);
+<span class="comment">%</span>
+
+figure(3);
+subplot(221)
+plotLinThings(data, 13,  8, columnAna, 1)
+xlabel(<span class="string">'(Left Delay-Right Delay)/s'</span>);
+ylabel(<span class="string">'travel time/s'</span>)
+
+
+ylim([0 2])
+<span class="keyword">if</span> columnIg~=0
+
+diff=data(:, columnAna)-data(:, columnIg);
+<span class="keyword">else</span>
+    diff=data(:, columnAna);
+<span class="keyword">end</span>
+tvl0=data(diff==0, 13);
+tvl1=data(find(diff==1), 13);
+tvl2=data(find(diff==-1), 13);
+tvl0(tvl0&gt;10)=[];
+tvl1(tvl1&gt;10)=[];
+tvl2(tvl2&gt;10)=[];
+tvl0(tvl0&lt;=0)=[];
+tvl1(tvl1&lt;=0)=[];
+tvl2(tvl2&lt;=0)=[];
+
+
+<span class="comment">% plot([0 1 2 3],[mean(tvl0), mean(tvl1), mean(tvl2), mean(tvl3)],  '*-')</span>
+<span class="comment">% hold on</span>
+<span class="comment">% plot([0 1 2 3],[var(tvl0)+mean(tvl0),var(tvl1)+mean(tvl1), var(tvl2)+mean(tvl2), var(tvl3)+mean(tvl3)],  '*-')</span>
+<span class="comment">% ylim([0 1])</span>
+<span class="comment">% xlim([-1 3])</span>
+axis <span class="string">square</span>
+subplot(222)
+axis <span class="string">square</span>
+hold <span class="string">on</span>
+plotHist(tvl0, .05, <span class="string">'r'</span>, <span class="string">'r'</span>, 0);
+plotHist(tvl2, .05, <span class="string">'c'</span>, <span class="string">'c'</span>, 0);
+plotHist(tvl1, .05, <span class="string">'c'</span>, <span class="string">'c'</span>, 0);
+
+xlabel(<span class="string">'travel time/s'</span>)
+
+xlim([0 2])
+suptitle([<span class="string">'mouse #'</span> num2str(mice) <span class="string">', number of trials='</span> num2str(length(data(:, 1))), <span class="string">', big reward='</span> num2str(bigSize), <span class="string">' x small reward'</span>]);
+
+
+
+f1=figure(3);
+subplot(223)
+plotLinThings(data, 14,  8, columnAna, 1)
+xlabel(<span class="string">'(Left Delay-Right Delay)/s'</span>);
+ylabel(<span class="string">'sampling time/s'</span>)
+
+ylim([0 3])
+
+rxn0=data(find(diff==0), 14);
+rxn1=data(find(diff==1), 14);
+rxn2=data(find(diff==-1), 14);
+rxn0(rxn0&gt;10)=[];
+rxn1(rxn1&gt;10)=[];
+rxn2(rxn2&gt;10)=[];
+rxn0(rxn0&lt;=0.3)=[];
+rxn1(rxn1&lt;=0.3)=[];
+rxn2(rxn2&lt;=0.3)=[];
+<span class="comment">%</span>
+<span class="comment">% plot([0 1 2 3],[mean(rxn0), mean(rxn1), mean(rxn2), mean(rxn3)],  '*-')</span>
+<span class="comment">% hold on</span>
+<span class="comment">% plot([0 1 2 3],[var(rxn0)+mean(rxn0),var(rxn1)+mean(rxn1), var(rxn2)+mean(rxn2), var3(rxn3)+mean(rxn3)],  '*-')</span>
+<span class="comment">% ylim([0 1])</span>
+<span class="comment">% xlim([-1 3])</span>
+axis <span class="string">square</span>
+subplot(224)
+axis <span class="string">square</span>
+hold <span class="string">on</span>
+
+plotHist(rxn0, .05, <span class="string">'r'</span>, <span class="string">'r'</span>, 0);
+xlabel(<span class="string">'sampling time/s'</span>)
+plotHist(rxn1, .05, <span class="string">'c'</span>, <span class="string">'c'</span>, 0);
+
+plotHist(rxn2, .05, <span class="string">'c'</span>, <span class="string">'c'</span>, 0);
+xlim([0 2])
+suptitle([<span class="string">'mouse #'</span> num2str(mice) <span class="string">', number of trials='</span> num2str(length(data(:, 1))), <span class="string">', big reward='</span> num2str(bigSize), <span class="string">' x small reward'</span>]);
+set(findall(f1,<span class="string">'type'</span>,<span class="string">'text'</span>), <span class="string">'fontWeight'</span>,<span class="string">'bold'</span>)
+suptitle([<span class="string">'mouse #'</span> num2str(mice) <span class="string">', number of trials='</span> num2str(length(data(:, 1))), <span class="string">', big reward='</span> num2str(bigSize), <span class="string">' x small reward'</span>]);
+
+print(<span class="string">'-depsc'</span>,<span class="string">'-r200'</span>,[<span class="string">'C:\Users\user\Desktop\OD\Graphs\#'</span> num2str(mice) <span class="string">'_samptime_bigsize'</span>, num2str(num2str(bigSize)), <span class="string">'_laser_'</span>, num2str(stimTime)])
+
+
+
+
+
+<span class="comment">%</span>
+<span class="comment">% figure(2)</span>
+<span class="comment">% suptitle(num2str(mouse))</span>
+<span class="comment">% 435</span>
+<span class="comment">% figure(2)</span>
+<span class="comment">% subplot(331)</span>
+<span class="comment">% qqplot(actualDelay, leftDelay)</span>
+<span class="comment">% xlabel('actualDelay')</span>
+<span class="comment">% ylabel('leftDelay')</span>
+<span class="comment">% subplot(332)</span>
+<span class="comment">% qqplot(actualDelay, rightDelay)</span>
+<span class="comment">% xlabel('actualDelay')</span>
+<span class="comment">% ylabel('rightDelay')</span>
+<span class="comment">% subplot(334)</span>
+<span class="comment">% fakeChoice=round(rand(length(a.validTrials), 1));</span>
+<span class="comment">% randomDelay=sum([fakeChoice, 1-fakeChoice].*[leftDelay, rightDelay], 2);</span>
+<span class="comment">% qqplot(randomDelay, leftDelay)</span>
+<span class="comment">% xlabel('randomDelay')</span>
+<span class="comment">% ylabel('leftDelay')</span>
+<span class="comment">% subplot(335)</span>
+<span class="comment">% qqplot(randomDelay, rightDelay)</span>
+<span class="comment">% xlabel('randomDelay')</span>
+
+<span class="comment">% ylabel('rightDelay')</span>
+<span class="comment">%</span>
+<span class="comment">% subplot(333)</span>
+<span class="comment">% qqplot(actualDelay, randomDelay)</span>
+<span class="comment">% xlabel('actualDelay')</span>
+<span class="comment">% ylabel('randomDelay')</span>
+<span class="comment">%</span>
+<span class="comment">% subplot(336)</span>
+<span class="comment">% hold on</span>
+<span class="comment">% plotHist(randomDelay, 0.5, 'k', 'k', 1);</span>
+<span class="comment">% ylim([0, 70])</span>
+<span class="comment">% subplot(337)</span>
+<span class="comment">%</span>
+<span class="comment">% plotHist(leftDelay, 0.5, 'g', 'g', 1);</span>
+<span class="comment">% ylim([0, 70])</span>
+<span class="comment">%</span>
+<span class="comment">% subplot(338)</span>
+<span class="comment">% ylim([0, 70])</span>
+<span class="comment">%</span>
+<span class="comment">% plotHist(rightDelay, 0.5, 'r', 'r', 1);</span>
+<span class="comment">% ylim([0, 70])</span>
+<span class="comment">%</span>
+<span class="comment">% subplot(339)</span>
+<span class="comment">% ylim([0, 70])</span>
+<span class="comment">%</span>
+<span class="comment">% plotHist(actualDelay, 0.5, 'b', 'b', 1);</span>
+</pre><pre class="codeinput">f3=figure(3);
+set(f3, <span class="string">'Position'</span>, [600, 600, 1000, 250])
+
+subplot(131)
+x1=xyzP(:, 1);
+x2=xyzP(:, 2);
+y=xyzP(:, 3);
+X = [ones(size(x1)) x1 x2 x1.*x2];
+<span class="comment">% X = [ones(size(x1)) x1 x2 x1./(x1+x2)];</span>
+<span class="comment">% X = [ones(size(x1)) x1 x2 x1./(x1+x2)  x2./(x1+x2)];</span>
+<span class="comment">% X = [ones(size(x1)) x1 x2];</span>
+[b ,BINT,R,RINT,STATS]= regress(y,X);
+b
+STATS
+
+scatter3(x1,x2,y,<span class="string">'filled'</span>)
+zlim([0 1])
+hold <span class="string">on</span>
+x1fit = min(x1):.01:max(x1);
+x2fit = min(x2):.01:max(x2);
+[X1FIT,X2FIT] = meshgrid(x1fit,x2fit);
+YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT+ b(4)*X1FIT.*X2FIT;
+<span class="comment">% YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT + b(4)*X1FIT./(X1FIT+X2FIT);</span>
+<span class="comment">% YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT + b(4)*X1FIT./(X1FIT+X2FIT)+ b(5)*X2FIT./(X1FIT+X2FIT);</span>
+<span class="comment">% YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT;</span>
+
+colormap(april)
+
+mesh(X1FIT,X2FIT,YFIT)
+view(0,90)
+xlabel(<span class="string">'left'</span>)
+ylabel(<span class="string">'right'</span>)
+zlabel(<span class="string">'left preference'</span>)
+
+
+subplot(132)
+hist(R)
+title(<span class="string">'distribution of residuals'</span>)
+
+subplot(133)
+qqplot(R)
+
+xxx=data(:, 1:2);
+yyy=data(:, 3);
+[bg,DEV,STATS] = glmfit(xxx, yyy, <span class="string">'binomial'</span>, <span class="string">'link'</span>, <span class="string">'logit'</span>)
+xx=linspace(0,10)';
+xc=ones(length(xx), 1);
+f4=figure(4)
+set(f4, <span class="string">'Position'</span>, [0, 0, 1200, 250])
+
+<span class="keyword">for</span> i=0:10
+    figure(4)
+    subplot(141)
+    hold <span class="string">on</span>
+
+yfit = glmval(bg, [xx, xc*i], <span class="string">'logit'</span>, <span class="string">'size'</span>, 1);
+plot(linspace(0,10)', yfit, <span class="string">'-'</span>)
+    subplot(142)
+    hold <span class="string">on</span>
+
+yfit = glmval(bg, [xc*i, xx], <span class="string">'logit'</span>, <span class="string">'size'</span>, 1);
+plot(linspace(0,10)', yfit, <span class="string">'r-'</span>)
+
+<span class="keyword">end</span>
+    subplot(141)
+    hold <span class="string">on</span>
+l=line([0 8], [0.5, 0.5]);
+set(l, <span class="string">'Color'</span>, [.8, .8, .8])
+plot(leftSide(:, 1), leftSide(:, 2), <span class="string">'*'</span>)
+ylim([0 1])
+title(<span class="string">'stepping through right reward delay'</span>)
+xlabel(<span class="string">'left reward delay/s'</span>)
+ylabel(<span class="string">'preference for left'</span>)
+    subplot(142)
+hold <span class="string">on</span>
+l=line([0 8], [0.5, 0.5]);
+set(l, <span class="string">'Color'</span>, [.8, .8, .8])
+plot(rightSide(:, 1), 1-rightSide(:, 2), <span class="string">'*'</span>)
+ylim([0 1])
+xlabel(<span class="string">'right reward delay/s'</span>)
+ylabel(<span class="string">'preference for left'</span>)
+title(<span class="string">'stepping through left reward delay'</span>)
+
+    subplot(143)
+x1fit = min(x1):.01:max(x1);
+x2fit = min(x2):.01:max(x2);
+[X1FIT,X2FIT] = meshgrid(x1fit,x2fit);
+xpred = [X1FIT(:), X2FIT(:)];
+ypred=glmval(bg, xpred, <span class="string">'logit'</span>, <span class="string">'size'</span>, 1);
+Ypred = reshape(ypred,length(x2fit),length(x1fit));
+zlim([0 1])
+colormap(april)
+
+mesh(x1fit,x2fit, Ypred)
+view(0,90)
+xlabel(<span class="string">'left'</span>)
+ylabel(<span class="string">'right'</span>)
+zlabel(<span class="string">'left preference'</span>)
+
+hold <span class="string">on</span>
+scatter3(x1,x2,y,<span class="string">'filled'</span>)
+
+subplot(144)
+<span class="comment">%calculate 0.5 intercepts</span>
+leftDelayFixed=unique(leftDelay);
+rightIndifferent=(0-bg(1)-bg(2)*leftDelayFixed)./bg(3);
+plot(leftDelayFixed, rightIndifferent, <span class="string">'*'</span>)
+hold <span class="string">on</span>
+[bf, bintf, rf, rintf, statsf]= regress(rightIndifferent, [ones(length(leftDelayFixed),1), leftDelayFixed]);
+xf=min(leftDelayFixed):1:max(leftDelayFixed);
+lf=plot(xf, bf(1)+bf(2).*xf);
+set (lf, <span class="string">'Color'</span>, <span class="string">'r'</span>)
+l1=line([min(leftDelayFixed) max(leftDelayFixed)], [0, 0]);
+set(l1, <span class="string">'Color'</span>, [.8, .8, .8])
+l2=line( [0, 0], [min(leftDelayFixed) max(leftDelayFixed)]);
+set(l2, <span class="string">'Color'</span>, [.8, .8, .8])
+xlabel(<span class="string">'Fixed Left Delay'</span>)
+ylabel(<span class="string">'Indifferent Right Delay'</span>)
+
+
+
+f=figure(5);
+set(f, <span class="string">'Position'</span>, [0, 0, 800, 700])
+subplot(221)
+[gof,intercept]=plotHyperThings(data, 1, 2);
+xlabel(<span class="string">'Left Delay/s'</span>);
+ylabel(<span class="string">'Preference for left side'</span>);
+
+subplot(222)
+hold <span class="string">on</span>
+
+[bf, bintf, rf, rintf, statsf]= regress(intercept', [ones(length(leftDelayFixed),1), leftDelayFixed]);
+xf=min(leftDelayFixed):1:max(leftDelayFixed);
+lf=plot(xf, bf(1)+bf(2).*xf, <span class="string">'k'</span>);
+xlim([0, max(leftDelayFixed)])
+ylim([min(intercept)-1, max(intercept)+1])
+plot(leftDelayFixed, intercept, <span class="string">'ko'</span>)
+plot(leftDelayFixed, intercept, <span class="string">'k*'</span>)
+xlabel(<span class="string">'Right Delay/s'</span>);
+ylabel(<span class="string">'Indifferent Left Delay/s'</span>);
+
+
+subplot(223)
+data5=data;
+data5(:, 3)=1-data(:, 3);
+[gof,intercept]=plotHyperThings(data5, 2, 1);
+xlabel(<span class="string">'Right Delay/s'</span>);
+ylabel(<span class="string">'Preference for left side'</span>);
+
+
+subplot(224)
+hold <span class="string">on</span>
+
+[bf, bintf, rf, rintf, statsf]= regress(intercept', [ones(length(leftDelayFixed),1), leftDelayFixed]);
+xf=min(leftDelayFixed):1:max(leftDelayFixed);
+lf=plot(xf, bf(1)+bf(2).*xf, <span class="string">'k'</span>);
+xlim([0, max(leftDelayFixed)])
+ylim([min(intercept)-1, max(intercept)+1])
+plot(leftDelayFixed, intercept, <span class="string">'ko'</span>)
+plot(leftDelayFixed, intercept, <span class="string">'k*'</span>)
+xlabel(<span class="string">'Left Delay/s'</span>);
+ylabel(<span class="string">'Indifferent Right Delay/s'</span>);
+
+<span class="comment">% subplot(223)</span>
+<span class="comment">% %plot data by stimulation</span>
+<span class="comment">% [bg,DEV,STATS, intercept]=plotLogitThings(data,3, 8, 11, 1);</span>
+<span class="comment">% xlabel('Delay/s');</span>
+<span class="comment">% ylabel('Preference for left side');</span>
+<span class="comment">%</span>
+<span class="comment">% subplot(224)</span>
+<span class="comment">% %plot data by stimulation</span>
+<span class="comment">% [bg,DEV,STATS, intercept]=plotLogitThings(data,3,  8, 10, 1);</span>
+<span class="comment">% xlabel('Delay/s');</span>
+<span class="comment">% ylabel('Preference for left side');</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">% figure(6)</span>
+<span class="comment">%</span>
+<span class="comment">% [coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');</span>
+<span class="comment">%</span>
+<span class="comment">% [ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 10, 11], 8, [10, 11])</span>
+</pre><p>f=figure; set(f, 'Position', [300, 300, 200, 200])0</p><p>L=dataL./dataLs; R=dataR./dataRs;</p><p>hold on ciplot(mean(L, 2)+std(L, 0, 2), mean(L, 2)-std(L, 0, 2), leftDelaySet, [.9, .8, .95]) % plot(leftDelaySet, mean(L, 2)+std(L, 0, 2), 'Color', [.6, .5, .85]) % plot(leftDelaySet, mean(L, 2)-std(L, 0, 2), 'Color', [.6, .5, .85])</p><p>ciplot(mean(R, 2)+std(R, 0, 2), mean(R, 2)-std(R, 0, 2), leftDelaySet, [.8, .9, .7]) % plot(leftDelaySet, mean(R, 2)+std(R, 0, 2), 'Color', [.5, .7, .85]) % plot(leftDelaySet, mean(R, 2)-std(R, 0, 2), 'Color', [.85, .7, .85]) plot(leftDelaySet, mean(R, 2), '*','Color', [.7, .4, .8], 'LineWidth', 2) plot(leftDelaySet, mean(R, 2), 'Color', [.7, .4, .8], 'LineWidth', 2)</p><p>plot(leftDelaySet, mean(L, 2), '*','Color', [.5, .3, .6], 'LineWidth', 2) plot(leftDelaySet, mean(L, 2), 'Color', [.5, .3, .6], 'LineWidth', 2) xlim([0 max(leftDelaySet)])</p><p>ylim([0 1]) xlabel('Delay/s'); ylabel('Preference');</p><p>l=line([0 max(leftDelaySet)], [0.5, 0.5]); set(l, 'Color', 'r')</p><p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+
+
+set(0,'DefaultAxesFontName', 'Arial')
+set(0,'DefaultAxesFontSize', 12)
+
+% Change default text fonts.
+set(0,'DefaultTextFontname', 'Arial')
+set(0,'DefaultTextFontSize', 12)
+
+close all
+
+% clean up directory and find all files in range
+F=0;
+delete '.DS_Store';
+D = dir;
+
+info=zeros(length(D), 3);
+for i=3:length(D)
+    info(i, 1)=str2num(D(i).name(4:6));
+    info(i, 2)=datenum(D(i).name(8:15), 'dd-mm-yy');
+end
+
+info(1:2, :)=[];
+info(:, 2)=info(:, 2)-min(info(:, 2))+1;
+info(:, 3)=[1:length(info(:, 1))];
+
+[info(:, 2), I]=sort(info(:, 2));
+info(:, 2)=round(info(:, 2));
+info(:, 1)=info(I, 1);
+info(:, 3)=info(I, 3);
+
+
+mouse=input('which mouse ');
+day=input('which day ');
+bigSize=input('what big size ');
+
+if mean(day)==0 && mean(mouse)~=0
+indrange=info(ismember(info(:, 1), mouse), 3);
+elseif mean(mouse)==0 && mean(day)~=0
+indrange=info(ismember(info(:, 2),day), 3);
+elseif mean(mouse)==0 && mean(day)==0
+    indrange=info(:, 3);
+else
+indrange=info(ismember(info(:, 1), mouse), 3);
+indrange2=info(ismember(info(:, 2),day), 3);
+indrange=intersect(indrange, indrange2);
+end
+data=[];
+infoMouse=[];
+for m=1: length(indrange)
+
+filename= D(indrange(m)+2).name
+    
+
+[e, a]=extractOlfData(filename);
+info(info(:, 3)==indrange(m), 4)=e.bigSize;
+info(info(:, 3)==indrange(m), 5)=max([3*max(e.leftDecisionTTL),1*max(e.cueSampledTTL),2*max(e.cueOnTTL)]);
+info(info(:, 3)==indrange(m), 6)= a.rewardCollected;
+
+odor=[];
+delayD=[];
+
+leftDelay=e.leftRewardDelay(a.validTrials);
+rightDelay=e.rightRewardDelay(a.validTrials);
+s=size(leftDelay);
+if s(1)==1
+    leftDelay=leftDelay';
+    rightDelay=rightDelay';
+end
+side=a.side(:, 1);
+actualDelay=sum(a.side.*[leftDelay, rightDelay], 2);
+leftRewardSize=e.leftRewardSizeTotal(a.validTrials)/0.03;
+rightRewardSize=e.rightRewardSizeTotal(a.validTrials)/0.03;
+infoMouse=[infoMouse; info(info(:, 3)==indrange(m),:)];
+
+
+leftActualDelay=leftDelay.*side;
+rightActualDelay=rightDelay.*(1-side);
+actualDelaySigned=leftActualDelay-rightActualDelay;
+actualDelay=leftActualDelay+rightActualDelay;
+previousSide=[0; side(1:end-1)];
+previousTrialDelay=[0; actualDelaySigned(1:end-1)];
+
+previousTrialDelayCase=(leftActualDelay>mean(actualDelay))*3-(rightActualDelay>mean(actualDelay))*3;
+case2L=intersect(find(leftActualDelay>0), find(leftActualDelay<=mean(actualDelay)));
+case2R=intersect(find(rightActualDelay>0), find(rightActualDelay<=mean(actualDelay)));
+previousTrialDelayCase(case2L)=2;
+previousTrialDelayCase(case2R)=-2;
+case1=find(previousTrialDelayCase==0);
+case1L=intersect(find(side==1), case1);
+case1R=intersect(find(side==0), case1);
+previousTrialDelayCase(case1L)=1;
+previousTrialDelayCase(case1R)=-1;
+
+previousTrialDelayCase=[1; previousTrialDelayCase(1:end-1)];
+
+
+data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize, e.cueSampledTTL(a.validTrials), e.cueOnTTL(a.validTrials), a.travelTime(a.validTrials-min(a.validTrials)+1), a.reactionTime(a.validTrials-min(a.validTrials)+1), previousTrialDelay, previousTrialDelayCase, previousSide];
+% 
+% [leftSide, rightSide, delayDiffSide, delayRatioSide]=odorDelayPlot(leftDelay, rightDelay, side);
+% title(filename)
+
+% plot(delayDiffSet, delayD(:, 1)./delayD(:, 2),'o',delayDiffSet,yfit./delayD(:, 2),'-','LineWidth',2)
+assignin('base', ['info' e.mouseID(end-2:end)], infoMouse);
+assignin('base', ['data' e.mouseID(end-2:end)], data);
+
+
+
+save(['C:\Users\user\Desktop\OD\MatFiles\' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
+a.rewardCollected
+length(a.validTrials)
+end
+
+%
+if mean(info(:,5))>0
+columnAna=input('what column to analyze? ')+10;
+columnIg=input('what column to ignore? ')+10;
+    stimTime=2;
+else
+    columnAna=5;
+    stimTime=0;
+    
+    columnIg=0; 
+end
+% % %
+% % stimTime=0;
+% % columnIg=0;
+% % columnAna=16;
+
+mice =mouse;
+close all
+ data=[];
+f=pwd;
+runSessionsStart=1;
+
+for j=1:length(mice)    
+    info1=eval(['info',num2str(mice(j))]);
+    data1=eval(['data', num2str(mice(j))]);
+    days=[max(info1(:, 2))-200:max(info1(:, 2))]';
+    c=intersect(info1(:, 2), days);
+    ia=[];
+    for i=1:length(c)
+    ia=[ia; find(info1(:, 2)==c(i))];
+    end
+    sessions=intersect(intersect(find(info1(:, 4)==bigSize), find(info1(:, 5)==stimTime)), ia);
+    %     sessions=intersect(find(info1(:, 5)==stimTime), ia);
+ for i=runSessionsStart:length(sessions)
+data=[data; data1(find(data1(:,7)==sessions(i)), :)];  
+    end
+end
+numberOfTrials=length(data)
+
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1)
+bg
+pvalue=STATS.p
+intercept
+
+
+f1=figure(1);
+
+subplot(221)
+axis square
+% [coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');
+% [ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 10, 11], 8, [10, 11]);
+% 
+% [regressionStats.beta, regressionStats.p]
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1);
+xlabel('(Left Delay-Right Delay)/s');
+ylabel('Preference for left side');
+bg
+pvalue=STATS.p
+intercept
+try
+for i=1:length(bg(1, :))
+text(3, 1-i*0.1, [num2str(round(bg(2,i)*1000)/1000), '(',num2str(round(STATS.p(2, i)*1000)/1000) ')'])
+text(3, 1-i*0.05, [num2str(round(bg(1,i)*1000)/1000), '(',num2str(round(STATS.p(1, i)*1000)/1000) ')'])
+end
+end
+xlim([-10 10])
+subplot(222)
+hold on
+axis square
+if columnIg~=0
+data2=data(data(:, columnIg)==0,:);
+else
+    data2=data;
+end
+[coefficients, deviances, regressionStats] = glmfit(data2(:, [8, columnAna]), data2(:, 3), 'binomial', 'link', 'logit');
+[ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data2, [8, columnAna], 8, columnAna);
+l=line([-10, 10], [0.5, 0.5]);
+set(l, 'Color', [.8, .8, .8])
+text(3, .85, ['p = ' num2str(round(regressionStats.p(3)*1000)/1000)])
+text(3, .9, ['B = ' num2str(round(regressionStats.beta(3)*1000)/1000)])
+
+[regressionStats.beta, regressionStats.p]
+
+xlabel('(Left Delay-Right Delay)/s');
+ylim([0 1])
+
+
+figure(1)
+
+
+subplot(223)
+axis square
+dataA=data2(data2(:, 8)>=0, :);
+
+[bg,DEV,STATS, intercept, result]=plotLogitThings(dataA,3, 8, columnAna, columnIg, 1);
+xlabel('(Left Delay-Right Delay)/s');
+ylabel('Preference for left side');
+bg
+pvalue=STATS.p
+intercept
+try
+for i=1:length(bg(1, :))
+text(3, 1-i*0.1, [num2str(round(bg(2,i)*10000)/10000), '(',num2str(round(STATS.p(2, i)*10000)/10000) ')'])
+text(3, 1-i*0.05, [num2str(round(bg(1,i)*10000)/10000), '(',num2str(round(STATS.p(1, i)*10000)/10000) ')'])
+end
+end
+
+subplot(224)
+axis square
+[coefficients, deviances, regressionStats] = glmfit(dataA(:, [8, columnAna]), dataA(:, 3), 'binomial', 'link', 'logit');
+[ax, ~, patchHandles]=plotLogisticRegression(coefficients, regressionStats, dataA, [8, columnAna], 8, columnAna);
+[coefficients, deviances, regressionStats] = glmfit(dataA(:, [8, columnAna]), dataA(:, 3), 'binomial', 'link', 'logit');
+[ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, dataA, [8, columnAna], 8, columnAna);
+l=line([-0, 10], [0.5, 0.5]);
+set(l, 'Color', [.8, .8, .8])
+text(3, .85, ['p = ' num2str(round(regressionStats.p(3)*10000)/10000)])
+text(3, .9, ['B = ' num2str(round(regressionStats.beta(3)*10000)/10000)])
+
+
+
+suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1))), ', big reward=' num2str(bigSize), ' x small reward']);
+
+
+%%
+f=figure(2);
+set(f, 'Position', [0, 0, 750, 800])
+[leftSide, rightSide, delayDiffSide, xyzP, rightD3elayShift, leftDelayShift]=odorDelayPlot(data, columnAna, columnIg);
+%
+
+figure(3);
+subplot(221)
+plotLinThings(data, 13,  8, columnAna, 1)
+xlabel('(Left Delay-Right Delay)/s');
+ylabel('travel time/s')
+
+
+ylim([0 2])
+if columnIg~=0
+
+diff=data(:, columnAna)-data(:, columnIg);
+else
+    diff=data(:, columnAna);
+end
+tvl0=data(diff==0, 13);
+tvl1=data(find(diff==1), 13);
+tvl2=data(find(diff==-1), 13);
+tvl0(tvl0>10)=[];
+tvl1(tvl1>10)=[];
+tvl2(tvl2>10)=[];
+tvl0(tvl0<=0)=[];
+tvl1(tvl1<=0)=[];
+tvl2(tvl2<=0)=[];
+
+
+% plot([0 1 2 3],[mean(tvl0), mean(tvl1), mean(tvl2), mean(tvl3)],  '*-')
+% hold on
+% plot([0 1 2 3],[var(tvl0)+mean(tvl0),var(tvl1)+mean(tvl1), var(tvl2)+mean(tvl2), var(tvl3)+mean(tvl3)],  '*-')
+% ylim([0 1])
+% xlim([-1 3])
+axis square 
+subplot(222)
+axis square 
+hold on
+plotHist(tvl0, .05, 'r', 'r', 0);
+plotHist(tvl2, .05, 'c', 'c', 0);
+plotHist(tvl1, .05, 'c', 'c', 0);
+
+xlabel('travel time/s')
+
+xlim([0 2])
+suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1))), ', big reward=' num2str(bigSize), ' x small reward']);
+
+
+
+f1=figure(3);
+subplot(223)
+plotLinThings(data, 14,  8, columnAna, 1)
+xlabel('(Left Delay-Right Delay)/s');
+ylabel('sampling time/s')
+
+ylim([0 3])
+
+rxn0=data(find(diff==0), 14);
+rxn1=data(find(diff==1), 14);
+rxn2=data(find(diff==-1), 14);
+rxn0(rxn0>10)=[];
+rxn1(rxn1>10)=[];
+rxn2(rxn2>10)=[];
+rxn0(rxn0<=0.3)=[];
+rxn1(rxn1<=0.3)=[];
+rxn2(rxn2<=0.3)=[];
+% 
+% plot([0 1 2 3],[mean(rxn0), mean(rxn1), mean(rxn2), mean(rxn3)],  '*-')
+% hold on
+% plot([0 1 2 3],[var(rxn0)+mean(rxn0),var(rxn1)+mean(rxn1), var(rxn2)+mean(rxn2), var3(rxn3)+mean(rxn3)],  '*-')
+% ylim([0 1])
+% xlim([-1 3])
+axis square 
+subplot(224)
+axis square 
+hold on
+
+plotHist(rxn0, .05, 'r', 'r', 0);
+xlabel('sampling time/s')
+plotHist(rxn1, .05, 'c', 'c', 0);
+
+plotHist(rxn2, .05, 'c', 'c', 0);
+xlim([0 2])
+suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1))), ', big reward=' num2str(bigSize), ' x small reward']);
+set(findall(f1,'type','text'), 'fontWeight','bold')
+suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1))), ', big reward=' num2str(bigSize), ' x small reward']);
+
+print('-depsc','-r200',['C:\Users\user\Desktop\OD\Graphs\#' num2str(mice) '_samptime_bigsize', num2str(num2str(bigSize)), '_laser_', num2str(stimTime)])
+
+
+
+
+
+% 
+% figure(2)
+% suptitle(num2str(mouse))
+% 435
+% figure(2)
+% subplot(331)
+% qqplot(actualDelay, leftDelay)
+% xlabel('actualDelay')
+% ylabel('leftDelay')
+% subplot(332)
+% qqplot(actualDelay, rightDelay)
+% xlabel('actualDelay')
+% ylabel('rightDelay')
+% subplot(334)
+% fakeChoice=round(rand(length(a.validTrials), 1));
+% randomDelay=sum([fakeChoice, 1-fakeChoice].*[leftDelay, rightDelay], 2);
+% qqplot(randomDelay, leftDelay)
+% xlabel('randomDelay')
+% ylabel('leftDelay')
+% subplot(335)
+% qqplot(randomDelay, rightDelay)
+% xlabel('randomDelay')
+
+% ylabel('rightDelay')
+% 
+% subplot(333)
+% qqplot(actualDelay, randomDelay)
+% xlabel('actualDelay')
+% ylabel('randomDelay')
+% 
+% subplot(336)
+% hold on
+% plotHist(randomDelay, 0.5, 'k', 'k', 1);
+% ylim([0, 70])
+% subplot(337)
+% 
+% plotHist(leftDelay, 0.5, 'g', 'g', 1);
+% ylim([0, 70])
+% 
+% subplot(338)
+% ylim([0, 70])
+% 
+% plotHist(rightDelay, 0.5, 'r', 'r', 1);
+% ylim([0, 70])
+% 
+% subplot(339)
+% ylim([0, 70])
+% 
+% plotHist(actualDelay, 0.5, 'b', 'b', 1);
+%%
+f3=figure(3);
+set(f3, 'Position', [600, 600, 1000, 250])
+
+subplot(131)
+x1=xyzP(:, 1);
+x2=xyzP(:, 2);
+y=xyzP(:, 3);
+X = [ones(size(x1)) x1 x2 x1.*x2];
+% X = [ones(size(x1)) x1 x2 x1./(x1+x2)];
+% X = [ones(size(x1)) x1 x2 x1./(x1+x2)  x2./(x1+x2)];
+% X = [ones(size(x1)) x1 x2];
+[b ,BINT,R,RINT,STATS]= regress(y,X);
+b
+STATS
+
+scatter3(x1,x2,y,'filled')
+zlim([0 1])
+hold on
+x1fit = min(x1):.01:max(x1);
+x2fit = min(x2):.01:max(x2);
+[X1FIT,X2FIT] = meshgrid(x1fit,x2fit);
+YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT+ b(4)*X1FIT.*X2FIT;
+% YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT + b(4)*X1FIT./(X1FIT+X2FIT);
+% YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT + b(4)*X1FIT./(X1FIT+X2FIT)+ b(5)*X2FIT./(X1FIT+X2FIT);
+% YFIT = b(1) + b(2)*X1FIT + b(3)*X2FIT;
+
+colormap(april)
+
+mesh(X1FIT,X2FIT,YFIT)
+view(0,90)
+xlabel('left')
+ylabel('right')
+zlabel('left preference')
+
+
+subplot(132)
+hist(R)
+title('distribution of residuals')
+
+subplot(133)
+qqplot(R)
+
+xxx=data(:, 1:2);
+yyy=data(:, 3);
+[bg,DEV,STATS] = glmfit(xxx, yyy, 'binomial', 'link', 'logit')
+xx=linspace(0,10)';
+xc=ones(length(xx), 1);
+f4=figure(4)
+set(f4, 'Position', [0, 0, 1200, 250])
+
+for i=0:10
+    figure(4)
+    subplot(141)
+    hold on
+
+yfit = glmval(bg, [xx, xc*i], 'logit', 'size', 1);
+plot(linspace(0,10)', yfit, '-')
+    subplot(142)
+    hold on
+
+yfit = glmval(bg, [xc*i, xx], 'logit', 'size', 1);
+plot(linspace(0,10)', yfit, 'r-')
+
+end
+    subplot(141)
+    hold on
+l=line([0 8], [0.5, 0.5]);
+set(l, 'Color', [.8, .8, .8])
+plot(leftSide(:, 1), leftSide(:, 2), '*')
+ylim([0 1])
+title('stepping through right reward delay')
+xlabel('left reward delay/s')
+ylabel('preference for left')
+    subplot(142)
+hold on
+l=line([0 8], [0.5, 0.5]);
+set(l, 'Color', [.8, .8, .8])
+plot(rightSide(:, 1), 1-rightSide(:, 2), '*')
+ylim([0 1])
+xlabel('right reward delay/s')
+ylabel('preference for left')
+title('stepping through left reward delay')
+
+    subplot(143)
+x1fit = min(x1):.01:max(x1);
+x2fit = min(x2):.01:max(x2);
+[X1FIT,X2FIT] = meshgrid(x1fit,x2fit);
+xpred = [X1FIT(:), X2FIT(:)];
+ypred=glmval(bg, xpred, 'logit', 'size', 1);
+Ypred = reshape(ypred,length(x2fit),length(x1fit));
+zlim([0 1])
+colormap(april)
+
+mesh(x1fit,x2fit, Ypred)
+view(0,90)
+xlabel('left')
+ylabel('right')
+zlabel('left preference')
+
+hold on
+scatter3(x1,x2,y,'filled')
+
+subplot(144)
+%calculate 0.5 intercepts
+leftDelayFixed=unique(leftDelay);
+rightIndifferent=(0-bg(1)-bg(2)*leftDelayFixed)./bg(3);
+plot(leftDelayFixed, rightIndifferent, '*')
+hold on
+[bf, bintf, rf, rintf, statsf]= regress(rightIndifferent, [ones(length(leftDelayFixed),1), leftDelayFixed]);
+xf=min(leftDelayFixed):1:max(leftDelayFixed);
+lf=plot(xf, bf(1)+bf(2).*xf);
+set (lf, 'Color', 'r')
+l1=line([min(leftDelayFixed) max(leftDelayFixed)], [0, 0]);
+set(l1, 'Color', [.8, .8, .8])
+l2=line( [0, 0], [min(leftDelayFixed) max(leftDelayFixed)]);
+set(l2, 'Color', [.8, .8, .8])
+xlabel('Fixed Left Delay')
+ylabel('Indifferent Right Delay')
+
+
+
+f=figure(5);
+set(f, 'Position', [0, 0, 800, 700])
+subplot(221)
+[gof,intercept]=plotHyperThings(data, 1, 2);
+xlabel('Left Delay/s');
+ylabel('Preference for left side');
+
+subplot(222)
+hold on
+
+[bf, bintf, rf, rintf, statsf]= regress(intercept', [ones(length(leftDelayFixed),1), leftDelayFixed]);
+xf=min(leftDelayFixed):1:max(leftDelayFixed);
+lf=plot(xf, bf(1)+bf(2).*xf, 'k');
+xlim([0, max(leftDelayFixed)])
+ylim([min(intercept)-1, max(intercept)+1])
+plot(leftDelayFixed, intercept, 'ko')
+plot(leftDelayFixed, intercept, 'k*')
+xlabel('Right Delay/s');
+ylabel('Indifferent Left Delay/s');
+
+
+subplot(223)
+data5=data;
+data5(:, 3)=1-data(:, 3);
+[gof,intercept]=plotHyperThings(data5, 2, 1);
+xlabel('Right Delay/s');
+ylabel('Preference for left side');
+
+
+subplot(224)
+hold on
+
+[bf, bintf, rf, rintf, statsf]= regress(intercept', [ones(length(leftDelayFixed),1), leftDelayFixed]);
+xf=min(leftDelayFixed):1:max(leftDelayFixed);
+lf=plot(xf, bf(1)+bf(2).*xf, 'k');
+xlim([0, max(leftDelayFixed)])
+ylim([min(intercept)-1, max(intercept)+1])
+plot(leftDelayFixed, intercept, 'ko')
+plot(leftDelayFixed, intercept, 'k*')
+xlabel('Left Delay/s');
+ylabel('Indifferent Right Delay/s');
+
+% subplot(223)
+% %plot data by stimulation
+% [bg,DEV,STATS, intercept]=plotLogitThings(data,3, 8, 11, 1);
+% xlabel('Delay/s');
+% ylabel('Preference for left side');
+% 
+% subplot(224)
+% %plot data by stimulation
+% [bg,DEV,STATS, intercept]=plotLogitThings(data,3,  8, 10, 1);
+% xlabel('Delay/s');
+% ylabel('Preference for left side');
+% 
+% 
+% figure(6)
+% 
+% [coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');
+% 
+% [ax, lineHandles, patchHandles]=plotLogisticRegression(coefficients, regressionStats, data, [8, 10, 11], 8, [10, 11])
+
+
+%%
+
+%%
+% 
+% f=figure;
+% set(f, 'Position', [300, 300, 200, 200])0
+% 
+% L=dataL./dataLs;
+% R=dataR./dataRs;
+% 
+% hold on
+% ciplot(mean(L, 2)+std(L, 0, 2), mean(L, 2)-std(L, 0, 2), leftDelaySet, [.9, .8, .95])
+% % plot(leftDelaySet, mean(L, 2)+std(L, 0, 2), 'Color', [.6, .5, .85])
+% % plot(leftDelaySet, mean(L, 2)-std(L, 0, 2), 'Color', [.6, .5, .85])
+% 
+% 
+% ciplot(mean(R, 2)+std(R, 0, 2), mean(R, 2)-std(R, 0, 2), leftDelaySet, [.8, .9, .7])
+% % plot(leftDelaySet, mean(R, 2)+std(R, 0, 2), 'Color', [.5, .7, .85])
+% % plot(leftDelaySet, mean(R, 2)-std(R, 0, 2), 'Color', [.85, .7, .85])
+% plot(leftDelaySet, mean(R, 2), '*','Color', [.7, .4, .8], 'LineWidth', 2)
+% plot(leftDelaySet, mean(R, 2), 'Color', [.7, .4, .8], 'LineWidth', 2)
+% 
+% plot(leftDelaySet, mean(L, 2), '*','Color', [.5, .3, .6], 'LineWidth', 2)
+% plot(leftDelaySet, mean(L, 2), 'Color', [.5, .3, .6], 'LineWidth', 2)
+% xlim([0 max(leftDelaySet)])
+% 
+% ylim([0 1])
+% xlabel('Delay/s');
+% ylabel('Preference');
+% 
+% l=line([0 max(leftDelaySet)], [0.5, 0.5]);
+% set(l, 'Color', 'r')
+##### SOURCE END #####
+--></body></html>
