@@ -75,6 +75,7 @@ rightRewardSize=e.rightRewardSizeTotal(a.validTrials)/0.03;
 infoMouse=[infoMouse; info(info(:, 3)==indrange(m),:)];
 
 
+<<<<<<< HEAD
 leftActualDelay=leftDelay.*side;
 rightActualDelay=rightDelay.*(1-side);
 actualDelaySigned=leftActualDelay-rightActualDelay;
@@ -97,6 +98,9 @@ previousTrialDelayCase=[1; previousTrialDelayCase(1:end-1)];
 
 
 data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize, e.cueSampledTTL(a.validTrials), e.cueOnTTL(a.validTrials), a.travelTime(a.validTrials-min(a.validTrials)+1), a.reactionTime(a.validTrials-min(a.validTrials)+1), previousTrialDelay, previousTrialDelayCase, previousSide];
+=======
+data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.validTrials, m*ones(length(a.validTrials), 1), leftDelay-rightDelay, leftDelay./(leftDelay+rightDelay), leftRewardSize-rightRewardSize, 3*e.leftDecisionTTL(a.validTrials)+2*e.cueSampledTTL(a.validTrials)+e.cueOnTTL(a.validTrials), a.travelTime(a.validTrials-min(a.validTrials)+1), a.reactionTime(a.validTrials-min(a.validTrials)+1)];
+>>>>>>> FETCH_HEAD
 % 
 % [leftSide, rightSide, delayDiffSide, delayRatioSide]=odorDelayPlot(leftDelay, rightDelay, side);
 % title(filename)
@@ -104,14 +108,21 @@ data=[data;leftDelay, rightDelay, side,leftRewardSize, rightRewardSize,  a.valid
 % plot(delayDiffSet, delayD(:, 1)./delayD(:, 2),'o',delayDiffSet,yfit./delayD(:, 2),'-','LineWidth',2)
 assignin('base', ['info' e.mouseID(end-2:end)], infoMouse);
 assignin('base', ['data' e.mouseID(end-2:end)], data);
+<<<<<<< HEAD
 
 
 
 % save(['C:\Users\user\Desktop\OD\MatFiles\' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
 a.rewardCollected
 length(a.validTrials)
+=======
+save(['C:\Users\user\Desktop\OD\MatFiles\' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
+a.rewardCollected
+a.rewardPokeOut
+>>>>>>> FETCH_HEAD
 end
 
+<<<<<<< HEAD
 %
 if mean(info(:,5))>0
 columnAna=input('what column to analyze? ')+10;
@@ -127,9 +138,19 @@ end
 % stimTime=0;
 % columnIg=0;
 % columnAna=16;
+=======
+close all
+data=[];
+bigSize=2;
+stimTime=2;
+f=pwd;
+mice =[381];
+runSessionsStart=1;
+>>>>>>> FETCH_HEAD
 
 mice =mouse;
 
+<<<<<<< HEAD
 close all
  data=[];
 f=pwd;
@@ -137,6 +158,10 @@ runSessionsStart=1;
 
 for j=1:length(mice)    
     info1=eval(['info',num2str(mice(j))]);
+=======
+for j=1:length(mice)    
+    info1=eval(['info',num2str(mice(j))])
+>>>>>>> FETCH_HEAD
     data1=eval(['data', num2str(mice(j))]);
     days=[max(info1(:, 2))-200:max(info1(:, 2))]';
     c=intersect(info1(:, 2), days);
@@ -144,13 +169,25 @@ for j=1:length(mice)
     for i=1:length(c)
     ia=[ia; find(info1(:, 2)==c(i))];
     end
+<<<<<<< HEAD
     sessions=intersect(intersect(find(info1(:, 4)==bigSize), find(info1(:, 5)==stimTime)), ia);
     %     sessions=intersect(find(info1(:, 5)==stimTime), ia);
  for i=runSessionsStart:length(sessions)
+=======
+    sessions=intersect(intersect(find(info1(:, 4)==bigSize), find(info1(:, 5)==stimTime)), ia)
+%     sessions=intersect(find(info1(:, 5)==stimTime), ia);
+    for i=runSessionsStart:length(sessions)
+>>>>>>> FETCH_HEAD
 data=[data; data1(find(data1(:,7)==sessions(i)), :)];  
     end
 end
 numberOfTrials=length(data)
+<<<<<<< HEAD
+=======
+  
+f1=figure(1);
+set(f1, 'Position', [200, 200,1100, 500])
+>>>>>>> FETCH_HEAD
 
 
 [bg,DEV,STATS, intercept, result]=plotLogitThings(data,3, 8, columnAna, columnIg, 1)
@@ -205,6 +242,7 @@ ylim([0 1])
 figure(1)
 
 
+<<<<<<< HEAD
 subplot(223)
 axis square
 dataA=data2(data2(:, 8)>=0, :);
@@ -252,6 +290,12 @@ set(f, 'Position', [0, 0, 750, 800])
 figure(3);
 subplot(221)
 plotLinThings(data, 13,  8, columnAna, 1)
+=======
+f2=figure(2);
+set(f2, 'Position', [200, 200,1100, 500])
+subplot(121)
+plotLinThings(data, 12,  8, 11, 1)
+>>>>>>> FETCH_HEAD
 xlabel('(Left Delay-Right Delay)/s');
 ylabel('travel time/s')
 
@@ -297,9 +341,16 @@ suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1
 
 
 
+<<<<<<< HEAD
 f1=figure(3);
 subplot(223)
 plotLinThings(data, 14,  8, columnAna, 1)
+=======
+f3=figure(3);
+set(f3, 'Position', [200, 200,1100, 500])
+subplot(121)
+plotLinThings(data, 13,  8, 11, 1)
+>>>>>>> FETCH_HEAD
 xlabel('(Left Delay-Right Delay)/s');
 ylabel('sampling time/s')
 
@@ -339,6 +390,43 @@ suptitle(['mouse #' num2str(mice) ', number of trials=' num2str(length(data(:, 1
 % print('-depsc','-r200',['C:\Users\user\Desktop\OD\Graphs\#' num2str(mice) '_samptime_bigsize', num2str(num2str(bigSize)), '_laser_', num2str(stimTime)])
 
 
+<<<<<<< HEAD
+=======
+[leftSide, rightSide, delayDiffSide, delayRatioSide, xyzP]=odorDelayPlot(data);
+figure(1)
+suptitle(num2str(mouse))
+
+figure(2)
+subplot(331)
+qqplot(actualDelay, leftDelay)
+xlabel('actualDelay')
+ylabel('leftDelay')
+subplot(332)
+qqplot(actualDelay, rightDelay)
+xlabel('actualDelay')
+ylabel('rightDelay')
+subplot(334)
+fakeChoice=round(rand(length(a.validTrials), 1));
+randomDelay=sum([fakeChoice, 1-fakeChoice].*[leftDelay, rightDelay], 2);
+qqplot(randomDelay, leftDelay)
+xlabel('randomDelay')
+ylabel('leftDelay')
+subplot(335)
+qqplot(randomDelay, rightDelay)
+xlabel('randomDelay')
+ylabel('rightDelay')
+
+subplot(333)
+qqplot(actualDelay, randomDelay)
+xlabel('actualDelay')
+ylabel('randomDelay')
+
+subplot(336)
+hold on
+plotHist(randomDelay, 0.5, 'k', 'k', 1);
+ylim([0, 70])
+subplot(337)
+>>>>>>> FETCH_HEAD
 
 fprintf('\n\n\nkstests for traveling time\n')
 [h, p]=kstest2(tvl0, tvl1);
@@ -353,6 +441,7 @@ fprintf('\n\n\nkstests for sampling time\n')
 fprintf(['\n rxn0 rxn1 ', num2str([h, p]), '\n'])
 [h, p]=kstest2(rxn0,rxn2);
 
+<<<<<<< HEAD
 fprintf(['\n rxn0 rxn2 ', num2str([h, p]), '\n'])
 
 % 
@@ -405,6 +494,10 @@ fprintf(['\n rxn0 rxn2 ', num2str([h, p]), '\n'])
 % 
 % plotHist(actualDelay, 0.5, 'b', 'b', 1);
 %%
+=======
+plotHist(actualDelay, 0.5, 'b', 'b', 1);
+
+>>>>>>> FETCH_HEAD
 f3=figure(3);
 set(f3, 'Position', [600, 600, 1000, 250])
 
@@ -555,8 +648,15 @@ xlabel('Right Delay/s');
 ylabel('Preference for left side');
 
 
+<<<<<<< HEAD
 subplot(224)
 hold on
+=======
+
+figure(6)
+
+[coefficients, deviances, regressionStats] = glmfit(data(:, [8, 10, 11]), data(:, 3), 'binomial', 'link', 'logit');
+>>>>>>> FETCH_HEAD
 
 [bf, bintf, rf, rintf, statsf]= regress(intercept', [ones(length(leftDelayFixed),1), leftDelayFixed]);
 xf=min(leftDelayFixed):1:max(leftDelayFixed);
