@@ -7,10 +7,10 @@ function [ind, waveforms]=findPeaks(a, lowerTh, upperTh, halfWaveWidth, fs)
 %%
 posNeg=lowerTh/upperTh>0;
 if posNeg==1
-betweenTh=[intersect(find(a<=upperTh), find(a>=lowerTh)); length(a)];
+betweenTh=[intersect(find(a>=upperTh), find(a>=lowerTh)); length(a)];
 overTh=[find(a>upperTh); length(a)];
 else
-betweenTh=[intersect(find(a>=upperTh), find(a<=lowerTh)); length(a)];
+betweenTh=[intersect(find(a<=upperTh), find(a>=lowerTh)); length(a)];
 overTh=[find(a<upperTh); length(a)];
 end
 segmentBorder=[0; find(diff(betweenTh)>1)];
