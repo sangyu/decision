@@ -7,10 +7,12 @@ function [ind, waveforms]=findPeaks(a, lowerTh, upperTh, halfWaveWidth, fs)
 %%
 posNeg=lowerTh/upperTh>0;
 if posNeg==1
-betweenTh=[intersect(find(a>=upperTh), find(a>=lowerTh)); length(a)];
+betweenTh=[intersect(find(a<=upperTh), find(a>=lowerTh)); length(a)];
+% betweenTh=[find(a>=upperTh); length(a)];
 overTh=[find(a>upperTh); length(a)];
 else
-betweenTh=[intersect(find(a<=upperTh), find(a>=lowerTh)); length(a)];
+betweenTh=[intersect(find(a<=upperTh), find(a<=lowerTh)); length(a)];
+% betweenTh=[find(a<=lowerTh); length(a)];
 overTh=[find(a<upperTh); length(a)];
 end
 segmentBorder=[0; find(diff(betweenTh)>1)];
@@ -19,6 +21,7 @@ for i=1:length(segmentBorder)-1
     seg=betweenTh(segmentBorder(i)+1):betweenTh(segmentBorder(i+1));
     if posNeg==1
     peak=find(a(seg)==max(a(seg)));
+    peak=find(a(seg)==min(a(seg)));
     else
     peak=find(a(seg)==min(a(seg)));
     end
@@ -37,7 +40,6 @@ peakInd(repeats)=[];
 % plot([0 length(a)],[h*lowerTh, h*lowerTh],  'g')
 % plot([0 length(a)],[h*upperTh, h*upperTh],  'r')
 ind=peakInd;
-halfWaveWidth=halfWaveWidth/1000;
 
 for i=1:length(ind)
 

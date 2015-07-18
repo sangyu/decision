@@ -143,22 +143,23 @@ else
 end
 
 
+
     
 
 
-%% 
-% % close all53
+% %% d
+% % % close all53
 
-mouse=[539]
+% mouse=[562]
 % mouse=[ 530, 531]
-% mouse=[539, 531, 530, 540]
+% mouse=[562]
 % % %  mouse=[ 473, 497]530
-% mouse = [ 471, 473, 473,497 ] 544
+% mouse = [ 471, 473, 473,497 ] 
 
 % mouse = [562, 567,568]
 % % mouse=[ 530, 531]
-% mouse = [ 533, 544, 547]
-% mouse = [ 540, 544,541, 530, 531]
+% mouse = [ 533, 544, 547, 521]
+% mouse = [ 540, 539, 530, 531]
 
 %  mouse=[533, 547, 543, 502] 
 
@@ -495,7 +496,7 @@ proportionMatrix=[mean(data(indLargeSoonerLight, 3)), mean(data(indLargeSoonerNo
 mean(data(indLargeEqualLight, 3)), mean(data(indLargeEqualNoLight, 3));
 mean(data(indLargeLaterLight, 3)), mean(data(indLargeLaterNoLight, 3))];
 
-assignin('base', ['proportionMatrix' mouse], proportionMatrix);
+assignin('base', ['proportionMatrix' num2str(mouse)], proportionMatrix);
 figure (5)
 bar(proportionMatrix)
 

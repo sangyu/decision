@@ -5,7 +5,7 @@
 %% ++++++++ Extraction+++++++ 
 function [exptSetup, action]=extractOlfData(filename)
     
-[headerline,schStart, data, scheduleTextData, behTextData] = importOlfFile(filename);
+[headerline,schStart, data, scheduleTextData, textdata] = importOlfFile(filename);
 % textdata(headerline, :)=[];
 
 exptSetup=struct;
@@ -61,14 +61,12 @@ end
 %so there's a string array of events called "events" and a
 %trialno array called "trialno" with corresponding indices
 
-events = behTextData;
+events = behTextDa;
 %convert cell array into an array of strings and get rid of NewTrials
 cellstr(events);
 
-trialno = data;
+trialno = [1; data];
 events(:,3) = [];
-nextCue_index = find(ismember(events, 'NextCue'));
-events(nextCue_index, :)=[];
 newtrial_index = find (ismember(events, 'NewTrial'));
 nextCue_index = find(ismember(events, 'NextCue'));
 finished_index = find(ismember(events, 'TrialFinished'));
@@ -100,7 +98,7 @@ for i=1:length(newtrial_index)
     end
 end
 
-toDelete=[toDelete; newtrial_index; finished_index;  odor];
+toDelete=[toDelete; newtrial_index; finished_index;  nextCue_index; odor];
 events([toDelete], :) = [];
 events(end,:) = [];
 
