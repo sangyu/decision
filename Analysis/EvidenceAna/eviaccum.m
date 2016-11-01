@@ -1,0 +1,1107 @@
+
+%eviaccum
+styling;
+
+load('C:\Users\user\Documents\Evidence\DataMatrices\genotype.mat')
+load('C:\Users\user\Documents\Evidence\DataMatrices\protocol100.mat')
+imagepath='C:\Users\user\Documents\Evidence\images\'
+[info, D]=readBehaviorDataDirectory;
+
+% %%
+mouse=input('which mouse ');    
+day=input('which day ');
+if mean(day)==0 && mean(mouse)~=0
+    day=unique(info(:, 2));
+elseif mean(mouse)==0 && mean(day)~=0
+    mouse=unique(info(:, 1));
+elseif mean(mouse)==0 && mean(day)==0
+    day=unique(info(:, 2));
+    mouse=unique(info(:, 1));
+end
+    infoMouse=[];
+    dataMouse=[];
+
+for m=1: length(mouse)
+    infoMouse=[];
+    dataMouse=[];
+    for n=1:length(day) 
+
+      fileLocator=info(intersect(find(info(:, 1)==mouse(m)), find(info(:, 2)==day(n))), 3);
+      files=1;
+      sessionTrials=[];
+      if length(fileLocator)>1
+          fprintf(['There are ' num2str(length(fileLocator)) ' files for this day: \n'])
+          for i=1:length(fileLocator)
+          fprintf([D(fileLocator(i)+2).name, '  ---   ' num2str(i), '\n'])
+          end
+          files=input('which file(s) ');    
+
+      end
+      
+
+        for x=files
+            filename= D(fileLocator(x)+2).name
+            [e, a]=extractOlfDataEvi(filename);
+            info(info(:, 3)==fileLocator(x), 5)=max([3*max(e.leftDecisionTTL),1*max(e.cueSampledTTL),2*max(e.cueOnTTL)]);
+            info(info(:, 3)==fileLocator(x), 6)= mean(a.score(a.score>-1)); %performance
+            info(info(:, 3)==fileLocator(x), 7)=length(a.score); % total trials
+            info(info(:, 3)==fileLocator(x), 8)=mean(a.reactionTime); % mean sampling time
+            odor=[];
+            delayD=[];
+            side=a.side(:, 1);
+            sessionTrials(x)=length(a.side);
+            infoMouse=[infoMouse; info(info(:, 3)==fileLocator(x),:)];
+            dateRun=datenum(e.dateTime(1:11), 'dd-mmm-yyyy');
+            abort=side*0;
+            abort(unique(a.abortTrials))=1;
+            abort=(abort(1:length(side)));
+            if length(a.trialStartTime)>length(a.side)
+                a.trialStartTime(end)=[];
+            end
+            dataMouse=[dataMouse;e.left(a.validTrials), side, a.score(a.validTrials),...
+                a.reactionTime, a.reactionTimeIncAbort, a.travelTime, ...
+                dateRun*ones(length(a.validTrials), 1), mouse(m)*ones(length(a.validTrials), 1), ...
+                e.cueSamplingTime(a.validTrials),e.cueOnTTL(a.validTrials), ...
+                a.abortTimesByTrial+1, e.preTrialDelay(1)+a.trialStartTime-a.trialAvailTime+a.reactionTime, ...
+                abort, x*ones(sessionTrials(x), 1), e.secondaryCueDelay(a.validTrials),...
+                e.odor1Valve2(a.validTrials)+e.odor2Valve2(a.validTrials)];
+    %         dataMouse(dataMouse(:, 9)>0.3, :)=[];
+            % data itmes:
+            % 12: total number of center pokes made including the qualifying
+            % one
+            % 13 tiralAavilableTime
+
+            % [leftSide, rightSide, delayDiffSide, delayRatioSide]=odorDelayPlot(leftDelay, rightDelay, side);
+            % title(filename)
+
+            % plot(delayDiffSet, delayD(:, 1)./delayD(:, 2),'o',delayDiffSet,yfit./delayD(:, 2),'-','LineWidth',2)
+
+
+
+            odorOnset=e.centerPokeDelay(end);
+            valveSwitch=e.secondaryCueDelay(50)+e.centerPokeDelay(50);
+            qualifying=e.cueSamplingTime(end)+e.centerPokeDelay(end);
+            cue1Species=max(e.odor1Valve);
+            cue2Species=max(e.odor1Valve2); 
+            cueDuration=e.cueDuration(end);
+            % save(['C:\Users\user\Desktop\OD\MatFiles\' e.mouseID(end-2:end) '.mat'],['info' e.mouseID(end-2:end)] , ['data' e.mouseID(end-2:end)])
+    %         fprintf(['rewardcollected = ', num2str(a.rewardCollected),  '   percent less delayed choice = ', num2str(a.discountPref), '\n'])
+
+        end
+    end
+        assignin('base', ['info' e.mouseID(end-2:end)], infoMouse);
+        assignin('base', ['data' e.mouseID(end-2:end)], dataMouse);
+        
+end
+try
+    dayData=eval(['dayData', num2str(mouse)])
+catch me
+    dayData=[];
+end
+close all
+
+if mean(info(:,5))>0
+    columnIg=1;
+    stimTime=2;
+else
+    stimTime=0;
+    columnIg=0; 
+end
+    
+ 
+% 
+% % % % mouse=[409, 415, 428, 432]
+
+% mouse=[428]
+% mouse=[425, 430]
+
+close all
+% %%
+
+startEnd=[1, 50];
+
+% set chooseSecondary to be 1 to process a specific secondaryCueDelay
+% value. if set at 0, all data are analyzed, and the variable secondary
+% does not apply.
+chooseSecondary=0;
+secondary=0.3;
+
+chooseSecondCue=1;
+
+%hard
+secondCue=2;
+%easy
+% secondCue=2;
+
+cutAbort=0;
+cutLeftOff=0;
+
+
+
+
+
+samplingTimeBinWidth=0.05;
+minSamplingBin=0;
+maxSamplingBin=0.8;
+normalize=0;
+
+
+
+
+minimumLaser=0;
+opsinType=geno(find(geno(:, 1)==mouse(1)), 3);
+% opsinType=1
+switch opsinType
+    case 2
+    opsin=green;
+    case 1
+    opsin=blue;
+    case 0
+    opsin='k';   
+end
+
+data=[];
+f=pwd;
+startTrials=[];
+endTrials=[];
+
+
+for j=1:length(mouse)    
+    size(data)
+    info1=eval(['info',num2str(mouse(j))]);
+    data1=eval(['data', num2str(mouse(j))]);
+   dayBreaks=[1; find(diff(data1(:, 7))~=0)+1; find(diff(data1(:, 15))~=0)+1; length(data1(:, 6))+1];
+ 
+    for i=1:length(dayBreaks)-1
+        startTrials(i)=dayBreaks(i)+startEnd(1)-1;
+        endTrials(i)=dayBreaks(i)+startEnd(2)-1;
+        if endTrials(i)>dayBreaks(i+1)
+            endTrials(i)=dayBreaks(i+1)-1
+        end
+        data=[data; data1(startTrials(i):endTrials(i), :)];
+    end
+end
+
+
+if length(mouse)==1
+    assignin('base', ['data_', num2str(mouse), '_', num2str(dateRun)], data);
+end
+
+% %% 
+% 
+% data=totalData
+
+if chooseSecondary==1
+   data= data(find(data(:, 16)==secondary), :);
+   valveSwitch=data(end, 16);
+end
+
+
+if chooseSecondCue==1
+    if max(data(:, 17))==5 && secondCue==2
+   data=data(union(find(data(:, 17)==secondCue), find(data(:, 17)==secondCue+3)), :);
+    else
+    data=data(union(find(data(:, 17)==secondCue), find(data(:, 17)==secondCue+2)), :);
+    end
+end
+    
+if cutAbort==1
+   data= data(find(data(:, 14)==0), :);
+end
+
+if cutLeftOff==1
+    data(data(:, 4)<0.35, :)=[];
+end
+
+
+totalNoTrials=length(data(:, 3));
+correctNoTrials=length(find(data(:, 3)==1));
+score=data(:, 3);
+side=data(:, 2);
+
+
+
+
+data(intersect(find(data(:, 13)<minimumLaser),find(data(:, 10)==1)), :)=[];
+splT=data(:, 4);
+rxnT=data(:, 6);
+correctTrials=find(score==1);
+incorrectTrials=find(score==0);
+leftTrials=find(data(:,1)==1);
+rightTrials=find(data(:,1)==0);
+stimTrials=find(data(:, 10)==1);
+unstimTrials=find(data(:, 10)==0);
+stimPresent=length(stimTrials)~=0;
+leftCorr=intersect(leftTrials, correctTrials);
+leftIncorr=intersect(leftTrials, incorrectTrials);
+rightCorr=intersect(rightTrials, correctTrials);
+rightIncorr=intersect(rightTrials, incorrectTrials);
+
+leftStim=intersect(leftTrials, stimTrials);
+leftUnstim=intersect(leftTrials, unstimTrials);
+rightStim=intersect(rightTrials, stimTrials);
+rightUnstim=intersect(rightTrials, unstimTrials);
+
+stimCorr=intersect(stimTrials, correctTrials);
+stimIncorr=intersect(stimTrials, incorrectTrials);
+unstimCorr=intersect(unstimTrials, correctTrials);
+unstimIncorr=intersect(unstimTrials, incorrectTrials);
+
+
+leftStimCorr=intersect(leftCorr, stimTrials);
+leftUnstimCorr=intersect(leftCorr, unstimTrials);
+rightStimCorr=intersect(rightCorr, stimTrials);
+rightUnstimCorr=intersect(rightCorr, unstimTrials);
+
+
+timeOutTrials=find(score==-1);
+nonTimeOut=score(score>=0);
+splTNonTimeOut=splT(score>=0);
+% cueNonTimeOut=data(1, score>=0)
+
+halfymax=0;
+quartymax=0;
+
+
+%
+sampleBins=[minSamplingBin:samplingTimeBinWidth:maxSamplingBin];
+sampleBins=[sampleBins; sampleBins+samplingTimeBinWidth];
+
+% sampleBins=[0.2, 0.4, 0.8; 0.4, 0.8, 1.8];
+
+
+
+
+% %%
+
+
+accuracyBins=[];
+trialsBins=[];
+
+for i=1:length(sampleBins(1, :))
+    accuracyBins(i)=mean(nonTimeOut(intersect(find(splTNonTimeOut>=sampleBins(1, i)), find(splTNonTimeOut<sampleBins(2, i)))));
+    trialsBins(i)=length(nonTimeOut(intersect(find(splTNonTimeOut>=sampleBins(1, i)), find(splTNonTimeOut<sampleBins(2, i)))));
+end
+if length(mouse)==1
+        assignin('base', ['accuracyBins' num2str(mouse)], accuracyBins);
+end
+accuracyBins=accuracyBins*100;
+maxSamplingTime=sampleBins(1, max(find(trialsBins)))+0.3;
+
+ 
+    
+splTNonTimeOutL=data(intersect(find(data(:, 1)==1), find(data(:, 3)~=-1)), 4);
+splTNonTimeOutR=data(intersect(find(data(:, 1)==0), find(data(:, 3)~=-1)), 4);
+nonTimeOutL=data(intersect(find(data(:, 1)==1), find(data(:, 3)~=-1)), 3);
+nonTimeOutR=data(intersect(find(data(:, 1)==0), find(data(:, 3)~=-1)), 3);
+
+accuracyBinsL=[];
+trialsBinsL=[];
+accuracyBinsR=[];
+trialsBinsR=[];
+
+for i=1:length(sampleBins(1, :))
+    accuracyBinsL(i)=mean(nonTimeOutL(intersect(find(splTNonTimeOutL>=sampleBins(1, i)), find(splTNonTimeOutL<sampleBins(2, i)))));
+    trialsBinsL(i)=length(nonTimeOutL(intersect(find(splTNonTimeOutL>=sampleBins(1, i)), find(splTNonTimeOutL<sampleBins(2, i)))));
+    accuracyBinsR(i)=mean(nonTimeOutR(intersect(find(splTNonTimeOutR>=sampleBins(1, i)), find(splTNonTimeOutR<sampleBins(2, i)))));
+    trialsBinsR(i)=length(nonTimeOutR(intersect(find(splTNonTimeOutR>=sampleBins(1, i)), find(splTNonTimeOutR<sampleBins(2, i)))));
+end
+
+accuracyBinsL=accuracyBinsL*100;
+accuracyBinsR=accuracyBinsR*100;
+
+
+
+
+% % %%
+% % 
+% 
+% figure(3000)
+% subplot(131)
+% noCenterPokesOn=(data(data(:, 10)==1, 12));
+% noCenterPokesOff=(data(data(:, 10)==0, 12));
+% ylabel('Percent Attempts Qualified')
+% 
+% percQualifyingOn=round(length(noCenterPokesOn)/sum(noCenterPokesOn)*10000)/100;
+% percQualifyingOff=round(length(noCenterPokesOff)/sum(noCenterPokesOff)*10000)/100;
+% hold on
+% b1=bar(1, percQualifyingOff);
+% set(b1, 'FaceColor', gray);
+% if stimPresent==1
+%     b2=bar(2, percQualifyingOn);
+%     set(b2, 'FaceColor', opsin);
+%     text(1.8,percQualifyingOn*1.01, num2str(percQualifyingOn) )
+% end
+% set(gca, 'xTick', [1, 2])
+% set(gca, 'xTickLabel', {'Off', 'On'})
+% xlim([0 3])
+% text(0.8,percQualifyingOff*1.01, num2str(percQualifyingOff) )
+% % ylim([min([percQualifyingOn, percQualifyingOff])*0.9, max([percQualifyingOn, percQualifyingOff])*1.05])
+% ylim([0 100])
+% 
+% 
+% subplot(132)
+% ylabel('Percent of Trials Qualified')
+% 
+% hold on
+% qualifiedOff=(1-mean(data(find(data(:, 10)==0), 14)))*100;
+% qualifiedOn=(1-mean(data(find(data(:, 10)==1), 14)))*100;
+% 
+% b1=bar(1,qualifiedOff);
+% set(b1, 'FaceColor', gray);
+% if stimPresent==1
+%     b2=bar(2, qualifiedOn);
+%     set(b2, 'FaceColor', opsin);
+%     text(1.8,qualifiedOn*1.05, num2str(qualifiedOn))
+% end
+% set(gca, 'xTick', [1, 2])
+% set(gca, 'xTickLabel', {'Off', 'On'})
+% xlim([0 3])
+% text(0.8,qualifiedOff*1.05, num2str(qualifiedOff))
+% ylim([0 100])
+% 
+% 
+% 
+% subplot(133)
+% ylabel('Percent of Trials Qualified')
+% 
+% hold on
+% extraworkOff=sum(data(find(data(:, 10)==0), 12))/length(find(data(:, 10)==0));
+% extraworkOn=sum(data(find(data(:, 10)==1), 12))/length(find(data(:, 10)==1));
+% 
+% b1=bar(1,extraworkOff);
+% set(b1, 'FaceColor', gray);
+% text(0.8,extraworkOff*1.05, num2str(extraworkOff))
+% if stimPresent==1
+%     b2=bar(2, extraworkOn);
+%     set(b2, 'FaceColor', opsin);
+%     text(1.8,extraworkOn*1.05, num2str(extraworkOn))
+% end
+% set(gca, 'xTick', [1, 2])
+% set(gca, 'xTickLabel', {'Off', 'On'})
+% xlim([0 3])
+% ylim([1 2])
+% 
+
+
+% %%
+
+
+f2=figure(mouse(1));
+
+set(f2, 'Position', [0, 0, 1600, 1000])
+substantialPoints=find(trialsBins>totalNoTrials/20);
+
+
+
+
+subplot(3, 5, 1);
+sp1=gca;
+
+hold on
+plot(sampleBins(1, :), accuracyBinsL, 'b-')
+plot(sampleBins(1, :), accuracyBinsR, 'g-')
+
+plot(sampleBins(1, :), accuracyBins, 'k--o')
+plot(sampleBins(1, substantialPoints), accuracyBins(substantialPoints), 'r.')
+
+% for i=1:length(sampleBins)
+%     t1=text(sampleBins(1, i)-.3*samplingTimeBinWidth, accuracyBins(i)-.1, num2str(trialsBins(i)));
+%     set(t1, 'FontSize', 10)
+%     if ismember(i, substantialPoints)
+%         set(t1,'Color', pink)
+%     else
+%         set(t1, 'Color', 'k')
+%     end
+% end
+ylabel('accuracy')
+title('Accuracy breakdown by sampling time','fontweight','bold')
+
+
+
+
+
+
+% %%
+
+sp7=subplot(3, 5, 7);
+
+hold on
+try
+    fc=plotHist(splT(correctTrials), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+    finc=plotHist(splT(incorrectTrials), samplingTimeBinWidth, 'r', 'r', 1, normalize);
+    ymax=max([fc, finc]);
+    if halfymax<ymax
+        halfymax=ymax;
+    end
+end
+try
+[hsCI, psCI]=kstest2(splT(correctTrials), splT(incorrectTrials))
+end
+title('Correct/incorrect trials','fontweight','bold')
+
+
+sp12=subplot(3, 5, 12);
+hold on
+try
+    fl=plotHist(splT(leftTrials), samplingTimeBinWidth, 'b', 'b', 1, normalize);
+    fr=plotHist(splT(rightTrials), samplingTimeBinWidth, 'g', 'g', 1, normalize);
+    ymax=max([fl, fr]);
+    if halfymax<ymax
+        halfymax=ymax;
+    end
+    [hsCI, psCI]=kstest2(splT(leftTrials), splT(rightTrials))
+
+end
+title('Odor 1/odor 2 trials','fontweight','bold')
+
+
+
+
+sp8=subplot(3, 5, 8);
+
+hold on
+try
+    fLc=plotHist(splT(leftCorr), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+end
+try
+    fLi=plotHist(splT(leftIncorr), samplingTimeBinWidth, 'r', 'r', 1, normalize);
+end
+try
+        [hsLcLi, psLcLi]=kstest2(splT(leftCorr), splT(leftIncorr))
+end
+    ymax=max([fLc, fLi]);
+    if quartymax<ymax
+        quartymax=ymax;
+    end
+
+title('Odor 1','fontweight','bold')
+
+
+
+
+sp9=subplot(3, 5, 9);
+
+hold on
+try
+fRc=plotHist(splT(rightCorr), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+
+end
+try
+    fRi=plotHist(splT(rightIncorr), samplingTimeBinWidth, 'r', 'r', 1, normalize);
+
+end
+
+try
+    [hsLcLi, psLcLi]=kstest2(splT(rightCorr), splT(rightIncorr))
+    ymax=max([fRc, fRi]);
+
+end
+
+if quartymax<ymax
+    quartymax=ymax;
+end
+
+title('Odor 2','fontweight','bold')
+
+
+
+
+% %%
+
+sp13=subplot(3, 5, 13);
+
+
+hold on
+try
+    if stimPresent==1
+        fLst=plotHist(splT(leftStim), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+    end
+    fLus=plotHist(splT(leftUnstim), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+end
+ymax=max([fLst, fLus]);
+if quartymax<ymax
+    quartymax=ymax;
+end
+
+
+
+
+% %%
+sp14=subplot(3, 5, 14);
+
+hold on
+
+try
+    if stimPresent==1 
+        fRst=plotHist(splT(rightStim), samplingTimeBinWidth, opsin, opsin, 1, normalize);    
+        [hsROnROff, psROnROff]=kstest2(splT(rightStim), splT(rightUnstim))
+    end
+    if quartymax<ymax
+        quartymax=ymax;
+    end
+end
+    fRus=plotHist(splT(rightUnstim), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+
+if stimPresent==1
+    text(median(splT)+std(splT), ymax*1.5, ['Light On, ', num2str( round(10000*mean(data(rightStim, 3)))/100), '% correct'], 'Color', opsin)
+    text(median(splT)+std(splT), ymax*1.1, ['Light On mean ST ', num2str( round(100*mean(splT(rightStim)))/100), 's'], 'Color', opsin)
+    text(median(splT)+std(splT), ymax*0.9, ['ks Test h = ', num2str(hsROnROff), ' p = ', num2str(psROnROff)], 'Color', 'k')
+        ymax=max([fRst, fRus, fLst, fLus]);
+
+end
+text(median(splT)+std(splT), ymax*1.3, ['Light Off mean ST ', num2str( round(100*mean(splT(rightUnstim)))/100), 's'], 'Color', 'k')
+text(median(splT)+std(splT), ymax*1.7, ['Light Off, ', num2str(round(10000* mean(data(rightUnstim, 3)))/100), '% correct'], 'Color', 'k')
+title('Odor 2','fontweight','bold')
+
+
+subplot(sp13)
+
+if stimPresent==1
+    text(median(splT)+std(splT), ymax*1.5, ['Light On, ', num2str( round(10000*mean(data(leftStim, 3)))/100), '% correct'], 'Color', opsin)
+    text(median(splT)+std(splT), ymax*1.1, ['Light On mean ST ', num2str( round(100*mean(splT(leftStim)))/100), 's'], 'Color', opsin)
+    try
+    [hsLOnLOff, psLOnLOff]=kstest2(splT(leftStim), splT(leftUnstim))
+    text(median(splT)+std(splT), ymax*0.9, ['ks Test h = ', num2str(hsLOnLOff), ' p = ', num2str(psLOnLOff)], 'Color', 'k')
+    end
+end
+text(median(splT)+std(splT), ymax*1.7, ['Light Off, ', num2str(round(10000* mean(data(leftUnstim, 3)))/100), '% correct'], 'Color', 'k')
+text(median(splT)+std(splT), ymax*1.3, ['Light Off mean ST ', num2str( round(100*mean(splT(leftUnstim)))/100), 's'], 'Color', 'k')
+
+
+
+title('Odor 1','fontweight','bold')
+
+
+
+    
+    
+    
+splTNonTimeOutOn=data(intersect(find(data(:, 10)==1), find(data(:, 3)~=-1)), 4);
+splTNonTimeOutOff=data(intersect(find(data(:, 10)==0), find(data(:, 3)~=-1)), 4);
+nonTimeOutOn=data(intersect(find(data(:, 10)==1), find(data(:, 3)~=-1)), 3);
+nonTimeOutOff=data(intersect(find(data(:, 10)==0), find(data(:, 3)~=-1)), 3);
+
+accuracyBinsOn=[];
+trialsBinsOn=[];
+accuracyBinsOff=[];
+trialsBinsOff=[];
+
+for i=1:length(sampleBins(1, :))
+    accuracyBinsOn(i)=mean(nonTimeOutOn(intersect(find(splTNonTimeOutOn>=sampleBins(1, i)), find(splTNonTimeOutOn<sampleBins(2, i)))));
+    trialsBinsOn(i)=length(nonTimeOutOn(intersect(find(splTNonTimeOutOn>=sampleBins(1, i)), find(splTNonTimeOutOn<sampleBins(2, i)))));
+    accuracyBinsOff(i)=mean(nonTimeOutOff(intersect(find(splTNonTimeOutOff>=sampleBins(1, i)), find(splTNonTimeOutOff<sampleBins(2, i)))));
+    trialsBinsOff(i)=length(nonTimeOutOff(intersect(find(splTNonTimeOutOff>=sampleBins(1, i)), find(splTNonTimeOutOff<sampleBins(2, i)))));
+end
+
+accuracyBinsOn=accuracyBinsOn*100
+accuracyBinsOff=accuracyBinsOff*100
+
+% %%
+sp6=subplot(3, 5, 6);
+
+hold on
+plot(sampleBins(1, :), accuracyBinsOn, 'o-', 'Color', opsin)
+plot(sampleBins(1, :), accuracyBinsOff, 'ko-')
+ylabel('accuracy')
+title('Accuracy by stimulation','fontweight','bold')
+% %%
+sp2=subplot(3, 5, 2);
+hold on
+try
+foff=plotHist(splT(unstimTrials), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+    if stimPresent==1
+    fon=plotHist(splT(stimTrials), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+    [hsOnOff, psOnOff]=kstest2(splT(stimTrials), splT(unstimTrials))
+    ymax=max([fon, foff]);
+    else 
+        ymax=max(foff)
+   end
+if halfymax<ymax
+    halfymax=ymax;
+end
+end
+if stimPresent==1
+    text(median(splT)+std(splT), ymax*1.5, ['Light On, ', num2str( round(10000*mean(data(stimTrials, 3)))/100), '% correct'], 'Color', opsin)
+    text(median(splT)+std(splT), ymax*1.1, ['Light On mean ST ', num2str( round(100*mean(splT(stimTrials)))/100), 's'], 'Color', opsin)
+    text(median(splT)+std(splT), ymax*0.9, ['ks Test h = ', num2str(hsOnOff), ' p = ', num2str(psOnOff)], 'Color', 'k')
+end
+text(median(splT)+std(splT), ymax*1.7, ['Light Off, ', num2str(round(10000* mean(data(unstimTrials, 3)))/100), '% correct'], 'Color', 'k')
+text(median(splT)+std(splT), ymax*1.3, ['Light Off mean ST ', num2str( round(100*mean(splT(unstimTrials)))/100), 's'], 'Color', 'k')
+
+title('Stim/Unstim trials','fontweight','bold')
+ 
+% %%
+sp3=subplot(3, 5, 3);
+
+if stimPresent==1
+
+    hold on
+    try
+        fstc=plotHist(splT(stimCorr), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+        fstinc=plotHist(splT(stimIncorr), samplingTimeBinWidth, 'r', 'r', 1, normalize);
+        [hsLcLi, psLcLi]=kstest2(splT(stimCorr), splT(stimIncorr))
+        ymax=max([fstc, fstinc]);
+        if quartymax<ymax
+            quartymax=ymax;
+        end
+    end
+end
+title('Stim Trials','fontweight','bold')
+
+
+
+sp4=subplot(3, 5, 4);
+
+
+hold on
+try
+fusc=plotHist(splT(unstimCorr), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+fusinc=plotHist(splT(unstimIncorr), samplingTimeBinWidth, 'r', 'r', 1, normalize);
+[hsLcLi, psLcLi]=kstest2(splT(unstimCorr), splT(unstimIncorr))
+
+ymax=max([fusc, fusinc]);
+if quartymax<ymax
+    quartymax=ymax;
+end
+end
+
+title('Unstim Trials','fontweight','bold')
+
+
+sp5=subplot(3, 5, 5);
+
+hold on
+stimShortTrials=intersect(stimTrials, find((splT<valveSwitch)));
+stimLongTrials=intersect(stimTrials, find((splT>valveSwitch)));
+unstimShortTrials=intersect(unstimTrials, find((splT<valveSwitch)));
+unstimLongTrials=intersect(unstimTrials, find((splT>valveSwitch)));
+
+b1=bar([3, 9], [mean(score(unstimShortTrials)*100), mean(score(unstimLongTrials)*100)],  0.3, 'Facecolor', gray)
+b2=bar([5, 11], [mean(score(stimShortTrials)*100), mean(score(stimLongTrials)*100)], 0.3,  'Facecolor', opsin)
+
+set(gca, 'xTick', [3, 5, 9, 11])
+set(gca, 'xTickLabel', {'S', 'S', 'L', 'L'})
+
+
+sp11=subplot(3, 5, 11);
+
+hold on
+for i=1:length(sampleBins(1, :))
+    try
+    plot(sampleBins(1, i), accuracyBinsOn(i), '.', 'Color', opsin, 'MarkerSize', trialsBinsOn(i)*300/sum(trialsBins));
+    plot(sampleBins(1, i), accuracyBinsOff(i), '.', 'Color', 'k', 'MarkerSize', trialsBinsOff(i)*300/sum(trialsBins));
+    end
+end
+
+xlabel('sampling time/s')
+ylabel('accuracy')
+title('scatter plot')
+
+
+sp10=subplot(3, 5, 10)
+if stimPresent==1
+    rxst=plotHist(rxnT(stimTrials), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+    [hsrxnOnOff, psrxnOnOff]=kstest2(rxnT(stimTrials), rxnT(unstimTrials))
+    text(median(rxnT)+std(rxnT), ymax*0.9, ['ks Test h = ', num2str(hsrxnOnOff), ' p = ', num2str(psrxnOnOff)], 'Color', 'k')
+end
+
+rxus=plotHist(rxnT(unstimTrials), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+
+xlim([0 2 ])
+xlabel('reaction time/s')
+
+
+sp15=subplot(3, 5, 15);
+
+noCenterPokesOn=(data(data(:, 10)==1, 12));
+noCenterPokesOff=(data(data(:, 10)==0, 12));
+
+percQualifyingOn=round(length(noCenterPokesOn)/sum(noCenterPokesOn)*10000)/100;
+percQualifyingOff=round(length(noCenterPokesOff)/sum(noCenterPokesOff)*10000)/100;
+hold on
+b1=bar(1, percQualifyingOff);
+% b3=bar(4, mean(data(find(data(:, 10)==0), 14)));
+set(b1, 'FaceColor', gray);
+if stimPresent==1
+    b2=bar(2, percQualifyingOn);
+    set(b2, 'FaceColor', opsin);
+%     b4=bar(5, mean(data(find(data(:, 10)==1), 14)));
+%     set(b4, 'FaceColor', opsin);
+    text(1.8,percQualifyingOn*1.01, num2str(percQualifyingOn) )
+end
+set(gca, 'xTick', [1, 2, 4, 5])
+set(gca, 'xTickLabel', {'Off', 'On', 'Off', 'On'})
+text(0.8,percQualifyingOff*1.01, num2str(percQualifyingOff) )
+ylim([min([percQualifyingOn, percQualifyingOff])*0.9, max([percQualifyingOn, percQualifyingOff])*1.05])
+
+title('Percentage of qualified center pokes during trial avail')
+
+
+% %%
+%cosmetic adjustments
+
+allSampTimePlots=[1:4, 6:9, 11:14];
+allcIncPlots=[3, 4, 7, 8, 9];
+allPerfPlots=[1, 6, 11, 5, 15];
+allShortPlots=[3, 4, 8, 9, 13, 14];
+allTallPlots=[2, 7, 10, 12];
+allStimNonStimPlots=[2, 13, 14];
+
+ymaxOverall(allShortPlots)=quartymax;
+ymaxOverall(allTallPlots)=halfymax;
+ymaxOverall(allPerfPlots)=200;
+% cue1Species=1;
+
+if cue1Species==0
+    cue1Color=[1, 1, 1];
+    cue2Color=[0.98, 0.98, 1];
+    subplot(sp1);
+    tC1=text(mean([odorOnset, valveSwitch]), 90, 'Blank')
+    tC2=text(mean([valveSwitch, qualifying]), 90, 'Cue 1')
+end
+if cue1Species==1
+    cue1Color=[0.98, 0.98, 1];
+    cue2Color=[1, 1, 0.95];
+    subplot(sp1);
+    tC1=text(mean([odorOnset, valveSwitch]), 90, 'Cue 1')
+    tC2=text(mean([valveSwitch, qualifying]), 90, 'Cue 2')
+end
+set(tC1, 'HorizontalAlignment', 'center')
+set(tC1, 'FontWeight', 'bold')
+set(tC2, 'HorizontalAlignment', 'center')
+set(tC2, 'FontWeight', 'bold')
+
+for plotnumber=allSampTimePlots
+    try
+       subplot(eval(['sp', num2str(plotnumber)]))
+       hold on
+
+
+       if valveSwitch>0.05
+            plot([valveSwitch valveSwitch], [0 ymaxOverall(plotnumber)*5], 'LineWidth', 0.5, 'Color', blue)
+       end
+
+        plot([odorOnset odorOnset], [0 ymaxOverall(plotnumber)*5],  'LineWidth', 0.5,'Color', gray)
+        plot([qualifying qualifying], [0 ymaxOverall(plotnumber)*5],  'LineWidth', 0.5,'Color', orange)
+        fill1=fill([odorOnset odorOnset, valveSwitch, valveSwitch], [0 ymaxOverall(plotnumber)*5, ymaxOverall(plotnumber)*5, 0], cue1Color);
+        fill2=fill([valveSwitch valveSwitch, cueDuration, cueDuration], [0 ymaxOverall(plotnumber)*5, ymaxOverall(plotnumber)*5, 0], cue2Color);
+        uistack(fill1,'bottom');
+        uistack(fill2,'bottom');
+
+        if ismember(plotnumber, allcIncPlots)
+            text(median(splT(rightCorr))+std(splT(rightCorr)), ymaxOverall(plotnumber)*1.5, 'Incorrect Trials', 'Color', 'r')
+            text(median(splT(rightCorr))+std(splT(rightCorr)), ymaxOverall(plotnumber)*1.3, 'Correct Trials', 'Color', 'k')
+        end
+
+
+        if plotnumber==12
+            text(median(splT(rightCorr))+std(splT(rightCorr)), ymaxOverall(plotnumber)*1.5, 'Odor 1 Trials', 'Color', 'b')
+            text(median(splT(rightCorr))+std(splT(rightCorr)), ymaxOverall(plotnumber)*1.3, 'Odor 2 Trials', 'Color', 'g')
+        end
+
+        ylabel('count')
+        xlabel('sampling time/s')
+        xlim([0, maxSamplingTime])
+        if plotnumber==10
+            xlabel('transit time/s')
+            xlim([0, max(rxnT)])
+
+        end
+            
+        if ismember(plotnumber, allPerfPlots)
+        ylim([0 100])
+        xlim([0, maxSamplingTime])
+
+        else
+        ylim([0 ymaxOverall(plotnumber)*1.7])
+        end
+    end
+end
+
+percentCorrectLeft=round(length(leftCorr)/length(leftTrials)*100);
+percentCorrectRight=round(length(rightCorr)/length(rightTrials)*100);
+
+
+percentCorrectLeftOn=round(length(leftStimCorr)/length(leftStim)*100);
+percentCorrectRightOn=round(length(rightStimCorr)/length(rightStim)*100);
+
+
+percentCorrectLeftOff=round(length(leftUnstimCorr)/length(leftUnstim)*100);
+percentCorrectRightOff=round(length(rightUnstimCorr)/length(rightUnstim)*100);
+
+percentLeftChoiceOn=round(100*mean(data(stimTrials, 2)));
+percentLeftChoiceOff=round(100*mean(data(unstimTrials, 2)));
+percentLeftChoice=round(100*mean(data(:, 2)));
+
+if length(mouse)==1 & length(day)==1
+
+    dayData =[dayData; mouse, (data(1, 7)),mean(splT(stimTrials)), mean(splT(unstimTrials)), percentLeftChoiceOn, percentLeftChoiceOff, ...
+        percentCorrectLeftOn, percentCorrectLeftOff, percentCorrectRightOn, percentCorrectRightOff]
+assignin('base', ['dayData', num2str(mouse)], dayData);
+
+end
+
+
+
+suptitle({['mouse # ' num2str(mouse),'  session ' datestr(data(1, 7)) , ':',...
+    datestr(data(end, 7)), '   ', e.scheduleName(16:end-2), ' Trials: [', num2str([startTrials(1), endTrials(1)]), ']  ', ...
+     num2str(length(data(:, 1))), ' trials total: ', ], [num2str(length(correctTrials)), ' correct /  ', num2str(length(incorrectTrials)), ' incorrect     ', ...
+    'bias(% left choice) : ' num2str(percentLeftChoice), ' On   ', num2str(percentLeftChoiceOn), '  Off  ' , num2str(percentLeftChoiceOff)]})
+
+%
+fprintf(['\n',  num2str(length(correctTrials)),' correct trials ', ...
+    '\n', num2str(length(incorrectTrials)), ' incorrect trials ',...
+    '\n'])
+fprintf([num2str(100*length(correctTrials)/(length(incorrectTrials)+length(correctTrials))), ' percent correct', '\n'])
+% %%
+mkdir([imagepath,'byDate\'  datestr(data(1, 7))])
+mkdir([imagepath, 'byMouse\' num2str(mouse)])
+
+fnam1=[imagepath,  'byDate\', datestr(data(1, 7)), '\', num2str(mouse), '_', datestr(data(1, 7)), datestr(data(end, 7)), num2str(data(1, 4)), '_', 'performance.png']; % your file name
+fnam2=[imagepath,  'byMouse\', num2str(mouse), '\', num2str(mouse), '_', datestr(data(1, 7)), datestr(data(end, 7)), num2str(data(1, 4)), '_', 'performance.png']; % your file name
+% %%
+snam='figure'; % note: NO extension...
+s=hgexport('readstyle',snam);
+s.Format='png';
+hgexport(f2,fnam1,s);
+hgexport(f2,fnam2,s);
+
+% %%
+valveValues=sort(unique(data(:, 16)))
+if length(valveValues)>1
+    f30=figure(30)
+    set(f30, 'Position', [200, 200,  300*length(valveValues)+100, 300])
+    ymaxV=0;
+    for i=1:length(valveValues)
+        sp=subplot(1, length(valveValues),  i);
+        assignin('base', ['sp', num2str(i)], sp);
+        dataValve=data(data(:, 16)==valveValues(i), :);
+        hold on
+
+        try
+            foff=plotHist(dataValve((dataValve(:, 10)==0), 4), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+            if stimPresent==1
+                fon=plotHist(dataValve((dataValve(:, 10)==1), 4), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+                [hsOnOff, psOnOff]=kstest2(dataValve((dataValve(:, 10)==0), 4), dataValve((dataValve(:, 10)==1), 4))
+                ymaxV=max([fon, foff, ymaxV]);
+            else 
+                ymaxV=max(foff);
+            end
+        end
+        if stimPresent==1
+%             text(median(splT)+std(splT), ymaxV*1.3, ['Light On, ', num2str( round(10000*mean(data(stimTrials, 3)))/100), '% correct'], 'Color', opsin)
+            text(median(splT)+std(splT), ymaxV*0.9, ['mean ST_{On}=', num2str( round(100*mean(dataValve((dataValve(:, 10)==1), 4)))/100), 's'], 'Color', opsin)
+            text(median(splT)+std(splT), ymaxV*0.7, ['ks Test p = ', num2str( round(100*psOnOff)/100)], 'Color', 'k')
+        end
+%         text(median(splT)+std(splT), ymaxV*1.5, ['Light Off, ', num2str(round(10000* mean(data(unstimTrials, 3)))/100), '% correct'], 'Color', 'k')
+        text(median(splT)+std(splT), ymaxV*1.1, ['mean ST_{Off}=', num2str( round(100*mean(dataValve((dataValve(:, 10)==0), 4)))/100), 's'], 'Color', 'k')
+        plot([valveValues(i) valveValues(i)], [0 ymaxV*5], 'LineWidth', 0.5, 'Color', blue)
+        xlabel('Sampling Time')
+        ylabel('Count')
+        title(['Switch at ', num2str(1000*valveValues(i))])
+    end
+    
+    for i=1:length(valveValues)
+        subplot(eval(['sp', num2str(i)]))
+        plot([odorOnset odorOnset], [0 ymaxV*2],  'LineWidth', 0.5,'Color', gray)
+        plot([qualifying qualifying], [0 ymaxV*2],  'LineWidth', 0.5,'Color', orange)
+        ylim([0 ymaxV*1.7])
+        xlim([0, 1.1*max(data(:, 4))]);
+    end
+    
+    suptitle(['Different Valve Switch Values: ', mat2str(valveValues*1000), ' ms'])
+end
+%
+% %%
+% figure (3)
+% subplot(1, 2, 1)
+% try
+% rxst=plotHist(rxnT(stimCorr), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+% rxus=plotHist(rxnT(unstimCorr), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+% [h3121, p3122]=kstest2(rxnT(stimCorr),rxnT(unstimCorr) )
+% end
+% title('correct')
+% subplot(1, 2, 2)
+% title('incorrect')
+% rxst=plotHist(rxnT(stimIncorr), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+% rxus=plotHist(rxnT(unstimIncorr), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+% 
+% %
+% %%
+% f3=figure(mouse(1)*3)
+% set(f3, 'Position', [200, 200, 900, 500])
+% 
+% 
+% subplot(221)
+% hold on
+% fc=plotHist(splT(unstimTrials), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+% finc=plotHist(splT(stimTrials), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+% ymax=max([fc, finc]);
+% % plotHist(splT(timeOutTrials), samplingTimeBinWidth, 'b', 'b', 1);
+% [hsCI, psCI]=kstest2(splT(unstimTrials), splT(stimTrials))
+% text(median(splT)+std(splT), ymax*1.5, 'Light On Trials', 'Color', opsin)
+% text(median(splT)+std(splT), ymax*1.7, 'Light Off Trials', 'Color', 'k')
+% plot([valveSwitch valveSwitch], [0 ymax*2], 'LineWidth', 0.5, 'Color', blue)
+% plot([qualifying qualifying], [0 ymax*2],  'LineWidth', 0.5,'Color', orange)
+% plot([odorOnset odorOnset], [0 ymax*2],  'LineWidth', 0.5,'Color', gray)
+% xlim([0, maxSamplingTime])
+% ylim([0 ymax*2])
+% xlabel('sampling time/s')
+% ylabel('count')
+% % xlim([min(splT)-std(splT), max(splT)+std(splT) ])
+% title('pdf(correct/incorrect)','fontweight','bold')
+% 
+% % %%
+% 
+% subplot(222)
+% percentStim=length(stimTrials)/(length(stimTrials)+length(unstimTrials));
+% hold on
+% [yon,xon] = ecdf(splT(stimTrials))
+% [yoff,xoff] = ecdf(splT(unstimTrials))
+% coff=plot(xoff, yoff, '.-','Color', gray, 'LineWidth', 1);
+% con=plot(xon, yon,'.-', 'Color', opsin, 'LineWidth', 1)
+% text(median(splT)+std(splT)+0.100, 0.05, 'Light On Trials', 'Color', opsin)
+% text(median(splT)+std(splT)+0.1, 0.15, 'Light Off Trials', 'Color', 'k')
+% plot([valveSwitch valveSwitch], [0 1], 'LineWidth', 0.5, 'Color', blue)
+% plot([qualifying qualifying], [0 1],  'LineWidth', 0.5,'Color', orange)
+% plot([odorOnset odorOnset], [0 1],  'LineWidth', 0.5,'Color', gray)
+% % xlim([0, max(splT)*1.1])
+% xlim([0, 0.9])
+% ylim([0 1])
+% xlabel('sampling time/s')
+% ylabel('fraction')
+% % xlim([min(splT)-std(splT), max(splT)+std(splT) ])
+% title('cdf(Light On/Off)','fontweight','bold')
+% 
+% 
+% 
+% 
+% subplot(223)
+% hold on
+% fon=plotHist(rxnT(stimTrials), samplingTimeBinWidth, opsin, opsin, 1, normalize);
+% foff=plotHist(rxnT(unstimTrials), samplingTimeBinWidth, 'k', 'k', 1, normalize);
+% ymax=max([fon, foff]);
+% % plotHist(rxnT(timeOutTrials), samplingTimeBinWidth, 'b', 'b', 1);
+% [hsCI, psCI]=kstest2(rxnT(stimTrials), rxnT(unstimTrials))
+% text(median(rxnT)+std(rxnT), ymax*1.5, 'Light On Trials', 'Color', opsin)
+% text(median(rxnT)+std(rxnT), ymax*1.7, 'Light Off Trials', 'Color', 'k')
+% plot([valveSwitch valveSwitch], [0 ymax*2], 'LineWidth', 0.5, 'Color', blue)
+% plot([qualifying qualifying], [0 ymax*2],  'LineWidth', 0.5,'Color', orange)
+% plot([odorOnset odorOnset], [0 ymax*2],  'LineWidth', 0.5,'Color', gray)
+% xlim([0, max(rxnT)])
+% ylim([0 ymax*2])
+% xlabel('traveling time/s')
+% ylabel('count')
+% % xlim([min(rxnT)-std(rxnT), max(rxnT)+std(rxnT) ])
+% title('pdf(correct/incorrect)','fontweight','bold')
+% 
+% % %%
+% 
+% subplot(224)
+% percentStim=length(stimTrials)/(length(stimTrials)+length(unstimTrials));
+% hold on
+% [yon,xon] = ecdf(rxnT(stimTrials))
+% [yoff,xoff] = ecdf(rxnT(unstimTrials))
+% coff=plot(xoff, yoff, '.-','Color', gray, 'LineWidth', 1);
+% con=plot(xon, yon,'.-', 'Color', opsin, 'LineWidth', 1)
+% text(median(rxnT)+std(rxnT)+0.100, 0.05, 'Light On Trials', 'Color', opsin)
+% text(median(rxnT)+std(rxnT)+0.1, 0.15, 'Light Off Trials', 'Color', 'k')
+% plot([valveSwitch valveSwitch], [0 1], 'LineWidth', 0.5, 'Color', blue)
+% plot([qualifying qualifying], [0 1],  'LineWidth', 0.5,'Color', orange)
+% plot([odorOnset odorOnset], [0 1],  'LineWidth', 0.5,'Color', gray)
+% xlim([0, max(rxnT)*1.1])
+% ylim([0 1])
+% xlabel('reaction time/s')
+% ylabel('fraction')
+% % xlim([min(rxnT)-std(rxnT), max(rxnT)+std(rxnT) ])
+% title('reaction time cdf(Light On/Off)','fontweight','bold')
+% 
+% suptitle(['pdf/cdf  mouse # ' num2str(mouse),'  session ' datestr(data(1, 7)) , ':', datestr(data(end, 7)), ' ', num2str(length(data(:, 1))), ' trials'])
+% 
+% 
+% 
+% mkdir([imagepath,'byDate\'  datestr(data(1, 7))])
+% mkdir([imagepath, 'byMouse\' num2str(mouse)])
+% 
+% fnam1=[imagepath,'byDate\',  datestr(data(1, 7)), '\', num2str(mouse), '_', datestr(data(1, 7)), '_', 'pdf_cdf.png']; % your file name
+% fnam2=[imagepath,  'byMouse\',num2str(mouse), '\', num2str(mouse), '_', datestr(data(1, 7)), '_', 'pdf_cdf.png']; % your file name
+% snam='figure'; % note: NO extension...
+% s=hgexport('readstyle',snam);
+% s.Format='png';
+% hgexport(f3,fnam1,s);
+% hgexport(f3,fnam2,s);
+
+% % %%
+% % f4=figure(4)
+% % set(f4, 'Position', [500, 0, 700, 1000])
+% % 
+% % substantialPoints=find(trialsBins>totalNoTrials/20);
+% % subplot(2,1, 1)
+% % hold on
+% % plot(sampleBins(1, :), accuracyBins, 'k--o')
+% % plot(sampleBins(1, substantialPoints), accuracyBins(substantialPoints), 'g.-')
+% % l1=legend('all data', '>5% total');
+% % set(l1, 'FontSize', 8);
+% % plot([sampleBins(1, 1), sampleBins(1, end)], [0.5, 0.5], 'Color', [0.8, 0.8, 0.8])
+% % plot([valveSwitch valveSwitch], [0 1], 'Color', [0.8, 0.8, 0.8])
+% % 
+% % for i=1:length(sampleBins)
+% %     t1=text(sampleBins(1, i)-.3*samplingTimeBinWidth, accuracyBins(i)-.1, num2str(trialsBins(i)));
+% %     set(t1, 'FontSize', 10)
+% %     if ismember(i, substantialPoints)
+% %         set(t1, 'Color', 'g')
+% %     else
+% %         set(t1, 'Color', 'k')
+% %     end
+% % end
+% % ylim([min(accuracyBins) 1])
+% % xlim([sampleBins(1, 1)-.05, sampleBins(1, end)+.05])
+% % xlabel('sampling time/s')
+% % ylabel('accuracy')
+% % title('Accuracy breakdown by sampling time','fontweight','bold')
+% % % %%
+% % 
+% % 
+% % 
+% % %%
+% % f1=figure(5)
+% % set(f1, 'Position', [500, 0, 700, 1000])
+% % 
+% % subplot(4, 2, 1:2)
+% % hold on
+% % plot(side, 'b.')
+% % plot(find(side==1), side(side==1), 'g.')
+% % ax=gca;
+% % set(ax, 'YTickLabel', {'Right', 'Left'})
+% % set(ax, 'YTick', [0, 1])
+% % ylim([-1, 2])
+% % title('choice')
+% % 
+% % subplot(4, 2, 3:4)
+% % hold on
+% % plot(score, 'r.')
+% % plot(find(score==1), score(find(score==1)), 'k.')
+% % ax=gca;
+% % set(ax, 'YTickLabel', {'Incorrect', 'Correct'})
+% % set(ax, 'YTick', [0, 1])
+% % ylim([-1, 2])
+% % title('score')
+% % % %%
+% % 
+% % subplot(4, 2, 5:6)
+% % plotHist(splT(correctTrials), samplingTimeBinWidth, 'k', 'k', 1);
+% % plotHist(splT(incorrectTrials), samplingTimeBinWidth, 'r', 'r', 1);
+% % % plotHist(splT(timeOutTrials), samplingTimeBinWidth, 'b', 'b', 1);
+% % [hs, ps]=kstest2(splT(correctTrials), splT(incorrectTrials))
+% % 
+% % xlim([0 3 ])
+% % title('cue sampling time/s')
+% % 
+% % subplot(4, 2, 7:8)
+% % %%
+% 
+% % % 
+% % % figure (3)
+% % % plot(splTNonTimeOut, '-o')
+% % % 

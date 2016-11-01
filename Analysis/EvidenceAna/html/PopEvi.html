@@ -1,0 +1,1764 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>PopEvi</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-10-02"><meta name="DC.source" content="PopEvi.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><pre class="codeinput">load(<span class="string">'C:\Users\user\Documents\Evidence\DataMatrices\genotype.mat'</span>)
+load(<span class="string">'C:\Users\user\Documents\Evidence\DataMatrices\protocol100.mat'</span>)
+
+styling;
+</pre><pre class="codeinput">micetoana=[417:421, 423:424];
+daystoana=[13, 14, 16];
+<span class="comment">% %</span>
+<span class="comment">% micetoana=[411, 412, 414];</span>
+<span class="comment">% daystoana=[27:29];</span>
+<span class="comment">% micetoana=[409:416];</span>
+<span class="comment">% daystoana=[13 14];</span>
+<span class="comment">% micetoana=[425:430, 432]</span>
+<span class="comment">% daystoana=[15]</span>
+micetoana=[425];
+daystoana=14
+<span class="comment">% micetoana=[425:432];</span>
+<span class="comment">% daystoana=[1:13];</span>
+<span class="comment">% % %</span>
+<span class="comment">% % %</span>
+<span class="comment">% micetoana=[417:421, 423:424];</span>
+<span class="comment">% daystoana=[13, 14, 16];</span>
+<span class="comment">% micetoana=[409:416];</span>
+<span class="comment">% daystoana=[13:14];</span>
+<span class="comment">%</span>
+<span class="comment">% % micetoana=[409:416];</span>
+<span class="comment">% % daystoana=[22, 23, 25];</span>
+
+dateRange=runMiceDay(micetoana, daystoana);
+</pre><pre class="codeoutput">
+daystoana =
+
+    14
+
+Warning: File '.DS_Store' not found. 
+
+filename =
+
+ab_425_29-09-16_17-18-20.csv
+
+</pre><pre class="codeinput">Notes=[];
+odorConstrast=<span class="string">'100'</span>;
+protocol=eval([<span class="string">'protocol'</span>, num2str(odorConstrast)]);
+
+sessionstoana={<span class="string">'L1'</span>, <span class="string">'L2'</span>, <span class="string">'L3'</span>};
+sessionstoana={<span class="string">'L4'</span>, <span class="string">'L5'</span>};
+<span class="comment">% sessionstoana={'L1'};</span>
+removeStickyTrials=0;
+
+<span class="comment">% Notes='Odor: 70/30';</span>
+micetoana=[409, 415, 416, 417, 418, 424, 428, 432]
+micetoana=[409, 415, 416, 428, 432]
+<span class="comment">% micetoana=[409, 415, 416, 417, 418, 424, 412, 413, 414, 419, 420]</span>
+<span class="comment">% micetoana=[409, 416]</span>
+<span class="comment">% micetoana=[425]</span>
+<span class="comment">% micetoana=[  411, 412, 413, 414, 419, 420, 425, 426, 430]</span>
+<span class="comment">% micetoana=[  411, 412, 413, 414, 425, 426, 430]</span>
+micetoana=[  411, 413 412, 414]
+<span class="comment">% startEndTrials=[1:50]</span>
+individualPoints=1;
+names=1;
+
+opsinType=geno(find(geno(:, 1)==micetoana(1)), 3);
+<span class="keyword">switch</span> opsinType
+    <span class="keyword">case</span> 2
+    opsin=green;
+    <span class="keyword">case</span> 1
+    opsin=blue;
+    <span class="keyword">case</span> 0
+    opsin=<span class="string">'k'</span>;
+<span class="keyword">end</span>
+opsinName=[<span class="string">'Ctrl'</span>; <span class="string">'ChR2'</span>; <span class="string">'Arch'</span>];
+lightOpsin=rgb2hsv(opsin);
+lightOpsin=[lightOpsin(1), lightOpsin(2)*0.4,lightOpsin(3)];
+lightOpsin=hsv2rgb(lightOpsin)
+<span class="comment">% %%</span>
+sampTimeOn=[];
+sampTimeOff=[];
+transitTimeOn=[];
+transitTimeOff=[];
+sampleSize=length(micetoana);
+noTimeOut=[];
+percentQualifiedOn=[];
+percentQualifiedOff=[];
+attemtsToQualifyOn=[];
+attemtsToQualifyOff=[];
+accuracyOn=[];
+accuracyOff=[];
+qualifiedTrialsOff=[];
+qualifiedTrialsOn=[];
+dates=cell(1);
+totalData=[];
+
+listofmice=[];
+<span class="keyword">for</span> i=2:length(protocol(:, 1))
+listofmice(i, 1)=protocol{i, 1};
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> mouse=1:length(micetoana)
+    mouseData=[];
+    dates{mouse, 1}=num2str(micetoana(mouse));
+    mouseInd=find(listofmice==micetoana(mouse));
+    <span class="keyword">for</span> day=1:length(sessionstoana)
+        sessionInd=find(ismember(protocol100(1, :), sessionstoana(day)));
+        date=datenum(protocol(mouseInd, sessionInd));
+        dates(mouse, day+1)=protocol(mouseInd, sessionInd);
+        data=eval([<span class="string">'data_'</span>, num2str(micetoana(mouse)), <span class="string">'_'</span>, num2str(date)]);
+        <span class="comment">%exclude timeout trials</span>
+        data=data(find(data(:, 3)~=-1), :)
+<span class="comment">%         data=data(find(data(:, 1)==1), :);</span>
+<span class="comment">%         data=data(startEndTrials, :);</span>
+        <span class="keyword">if</span> removeStickyTrials==1
+                    data=data(find(data(:, 4)&gt;0.4), :);
+        <span class="keyword">end</span>
+<span class="comment">%         noTimeOut(day, mouse)=length(find(data(:, 3)&lt;0));</span>
+        stimOnTrials=find(data(:, 10)==1);
+        stimOffTrials=find(data(:, 10)==0);
+        sampTimeOn(day, mouse)=mean(data(stimOnTrials, 4));
+        sampTimeOff(day, mouse)=mean(data(stimOffTrials, 4));
+        transitTimeOn(day, mouse)=mean(data(stimOnTrials, 6));
+        transitTimeOff(day, mouse)=mean(data(stimOffTrials, 6));
+        percentQualifiedOn(day, mouse)=length(data(stimOnTrials, 12))/sum(data(stimOnTrials, 12));
+        percentQualifiedOff(day, mouse)=length(data(stimOffTrials, 12))/sum(data(stimOffTrials, 12));
+        attemtsToQualifyOn(day, mouse)=mean(data(stimOnTrials, 12));
+        attemtsToQualifyOff(day, mouse)=mean(data(stimOffTrials, 12));
+        accuracyOn(day, mouse)=mean(data(stimOnTrials, 3));
+        accuracyOff(day, mouse)=mean(data(stimOffTrials, 3));
+        qualifiedTrialsOff(day, mouse)=(1-mean(data(stimOffTrials, 15)))*100;
+        qualifiedTrialsOn(day, mouse)=(1-mean(data(stimOnTrials, 15)))*100;
+        mouseData=[mouseData; data];
+
+
+    <span class="keyword">end</span>
+    assignin(<span class="string">'base'</span>, [<span class="string">'mouseData_'</span>,num2str(micetoana(mouse))], mouseData);
+
+    totalData=[totalData;mouseData];
+<span class="keyword">end</span>
+header=[{<span class="string">'Mouse'</span>}, sessionstoana];
+dates=[header; dates]
+assignin(<span class="string">'base'</span>, [<span class="string">'dates'</span>,num2str(micetoana(1)), <span class="string">'to'</span>, num2str(micetoana(mouse))], dates);
+<span class="comment">% %%</span>
+nowDate=datestr(now);
+nowDate=nowDate(1:11);
+fid = fopen( [imagepath, <span class="string">'/groupAnalysis/'</span>, opsinName(opsinType+1, :),num2str(micetoana(1)), <span class="string">'to'</span>, <span class="keyword">...</span>
+    num2str(micetoana(mouse)), <span class="string">'_'</span>, num2str(sessionstoana{1}), <span class="string">'to'</span>, <span class="keyword">...</span>
+    num2str(sessionstoana{end}), <span class="string">'_'</span>, nowDate, <span class="string">'.txt'</span>], <span class="string">'wt'</span> );
+formatSpec=<span class="string">'%s, %s, %s, %s\n'</span>;
+[nrows,ncols] = size(dates);
+<span class="keyword">for</span> row = 1:nrows
+    fprintf(fid,formatSpec,dates{row,:});
+<span class="keyword">end</span>
+fclose(fid);
+<span class="comment">% %%</span>
+minimumSamplingTime=(data(end, 14)+data(end, 9))*1000;
+
+f1=figure(micetoana(1)+data(1, 1))
+set(f1, <span class="string">'Position'</span>, [100, 100, 1200  400])
+
+subplot(151)
+barPlot2(sampTimeOff, sampTimeOn, micetoana, opsin, individualPoints, names)
+
+ylabel(<span class="string">'Sampling Time (s)'</span>)
+
+subplot(152)
+barPlot2(transitTimeOff, transitTimeOn, micetoana, opsin, individualPoints, names)
+ylabel(<span class="string">'Reaction Time (s)'</span>)
+
+
+subplot(153)
+barPlot2(percentQualifiedOff*100, percentQualifiedOn*100, micetoana, opsin, individualPoints, names)
+ylabel(<span class="string">'Percent CPoke Attempt Qualified'</span>)
+
+subplot(154)
+barPlot2(accuracyOff*100, accuracyOn*100, micetoana, opsin, individualPoints, names)
+ylabel(<span class="string">'Accuracy'</span>)
+
+
+subplot(155)
+barPlot2(qualifiedTrialsOff, qualifiedTrialsOn, micetoana, opsin, individualPoints, names)
+ylabel(<span class="string">'Percent Trials Qualified'</span>)
+
+<span class="comment">% suptitle(['mouse # ' num2str(micetoana),'  session ' datestr(dates(1)) , ':',...</span>
+<span class="comment">%     datestr(dates(end)), ' (min ', num2str(minimumSamplingTime), 'ms)', Notes])</span>
+<span class="comment">% %%</span>
+<span class="comment">% imagepath='C:\Users\user\Documents\Evidence\images\groupAnalysis\'</span>
+
+fnam1=[imagepath, <span class="string">'/groupAnalysis/'</span>, opsinName(opsinType+1, :),num2str(micetoana(1)), <span class="string">'to'</span>, <span class="keyword">...</span>
+    num2str(micetoana(mouse)), <span class="string">'_'</span>, num2str(sessionstoana{1}), <span class="string">'to'</span>, <span class="keyword">...</span>
+    num2str(sessionstoana{end}), <span class="string">'_'</span>, nowDate, <span class="string">'lightOnOff.png'</span>]; <span class="comment">% your file name</span>
+
+snam=<span class="string">'summaryFigure'</span>; <span class="comment">% note: NO extension...</span>
+s=hgexport(<span class="string">'readstyle'</span>,snam);
+s.Format=<span class="string">'png'</span>;
+hgexport(f1,fnam1,s);
+
+<span class="comment">% %%</span>
+
+
+figure(micetoana(2)+20)
+individualPoints=01
+dates=dateRange(1:3)
+subplot(131)
+hold <span class="string">on</span>
+<span class="keyword">for</span> i=1:3
+
+    plot(i, mean(sampTimeOff(i, :), 2), <span class="string">'ko'</span>)
+    ownErrorbar(i, mean(sampTimeOff(i, :), 2), std(sampTimeOff(i, :), 0, 2)/sqrt(length(micetoana)), std(sampTimeOff(i, :), 0, 2)/sqrt(length(micetoana)), .1, 2, <span class="string">'k'</span>)
+    [h, p]=ttest(sampTimeOff(i, :), sampTimeOn(i, :))
+    text(i,  mean(sampTimeOff(i, :), 2)+0.02, num2str(p))
+    plot(i, mean(sampTimeOn(i, :), 2), <span class="string">'o'</span>, <span class="string">'Color'</span>, opsin)
+    ownErrorbar(i, mean(sampTimeOn(i, :), 2), std(sampTimeOn(i, :),0, 2)/sqrt(length(micetoana)), std(sampTimeOn(i, :),0,  2)/sqrt(length(micetoana)), .1, 2, opsin)
+        plot(ones(length(sampTimeOff(i, :)), 1)*i, sampTimeOff(i, :), <span class="string">'.'</span>, <span class="string">'Color'</span>, lightGray, <span class="string">'MarkerSize'</span>, 15);
+        plot(ones(length(sampTimeOn(i, :)), 1)*i, sampTimeOn(i, :), <span class="string">'.'</span>, <span class="string">'Color'</span>, lightOpsin, <span class="string">'MarkerSize'</span>, 15);
+    <span class="keyword">end</span>
+
+plot([1, 2, 3], mean(sampTimeOff, 2), <span class="string">'k-'</span>)
+plot([1, 2, 3], mean(sampTimeOn, 2), <span class="string">'-'</span>, <span class="string">'Color'</span>, opsin)
+ylabel(<span class="string">'Sampling Time (s)'</span>)
+
+<span class="keyword">if</span> individualPoints==1
+
+    <span class="keyword">for</span> i=1:length(micetoana)
+        text(3.5, sampTimeOff(3, i), num2str(micetoana(i)), <span class="string">'Color'</span>, lightGray)
+        text(3.5, sampTimeOn(3, i), num2str(micetoana(i)), <span class="string">'Color'</span>, opsin)
+        text(0.5, sampTimeOff(1, i), num2str(micetoana(i)), <span class="string">'Color'</span>, lightGray)
+        text(0.5, sampTimeOn(1, i), num2str(micetoana(i)), <span class="string">'Color'</span>, opsin)
+        plot([1, 2, 3], sampTimeOn(:, i), <span class="string">'-'</span>, <span class="string">'Color'</span>, lightOpsin)
+        plot([1, 2, 3], sampTimeOff(:, i), <span class="string">'-'</span>, <span class="string">'Color'</span>, lightGray)
+
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+    xlim([0.5 4])
+<span class="comment">% %%</span>
+sampDiff=sampTimeOn-sampTimeOff;
+
+subplot(132)
+hold <span class="string">on</span>
+<span class="keyword">for</span> i=1:3
+
+    plot(i, mean(sampDiff(i, :), 2), <span class="string">'o'</span>, <span class="string">'Color'</span>, opsin)
+    ownErrorbar(i, mean(sampDiff(i, :), 2), std(sampDiff(i, :),0, 2)/sqrt(length(micetoana)), std(sampDiff(i, :),0,  2)/sqrt(length(micetoana)), .1, 2, opsin)
+        plot(ones(length(sampDiff(i, :)), 1)*i, sampDiff(i, :), <span class="string">'.'</span>, <span class="string">'Color'</span>, lightOpsin, <span class="string">'MarkerSize'</span>, 15);
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> individualPoints==1
+    <span class="keyword">for</span> i=1:length(micetoana)
+        text(3.5, sampDiff(3, i), num2str(micetoana(i)), <span class="string">'Color'</span>, opsin)
+        text(0.5, sampDiff(1, i), num2str(micetoana(i)), <span class="string">'Color'</span>, opsin)
+        plot([1, 2, 3], sampDiff(:, i), <span class="string">'-'</span>, <span class="string">'Color'</span>, lightOpsin)
+
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+plot([0 4],[0 0], <span class="string">'Color'</span>, lightGray )
+plot([1, 2, 3], mean(sampDiff, 2), <span class="string">'-'</span>, <span class="string">'Color'</span>, opsin)
+ylabel(<span class="string">'Difference in Sampling Time (s)'</span>)
+
+ylim([-.07 .07])
+
+
+sampDiffNorm=(sampTimeOn-sampTimeOff)./sampTimeOff;
+
+subplot(133)
+hold <span class="string">on</span>
+<span class="keyword">for</span> i=1:3
+
+    plot(i, mean(sampDiffNorm(i, :), 2), <span class="string">'o'</span>, <span class="string">'Color'</span>, opsin)
+    ownErrorbar(i, mean(sampDiffNorm(i, :), 2), std(sampDiffNorm(i, :),0, 2)/sqrt(length(micetoana)), std(sampDiffNorm(i, :),0,  2)/sqrt(length(micetoana)), .1, 2, opsin)
+        plot(ones(length(sampDiffNorm(i, :)), 1)*i, sampDiffNorm(i, :), <span class="string">'.'</span>, <span class="string">'Color'</span>, lightOpsin, <span class="string">'MarkerSize'</span>, 15);
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> individualPoints==1
+    <span class="keyword">for</span> i=1:length(micetoana)
+        text(3.5, sampDiffNorm(3, i), num2str(micetoana(i)), <span class="string">'Color'</span>, opsin)
+        text(0.5, sampDiffNorm(1, i), num2str(micetoana(i)), <span class="string">'Color'</span>, opsin)
+        plot([1, 2, 3], sampDiffNorm(:, i), <span class="string">'-'</span>, <span class="string">'Color'</span>, lightOpsin)
+
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+plot([0 4],[0 0], <span class="string">'Color'</span>, lightGray )
+plot([1, 2, 3], mean(sampDiffNorm, 2), <span class="string">'-'</span>, <span class="string">'Color'</span>, opsin)
+ylabel(<span class="string">'Normalized Difference in Sampling Time (s)'</span>)
+
+ylim([-.20 .20])
+</pre><pre class="codeoutput">
+micetoana =
+
+   409   415   416   417   418   424   428   432
+
+
+micetoana =
+
+   409   415   416   428   432
+
+
+micetoana =
+
+   411   413   412   414
+
+
+lightOpsin =
+
+    0.5700    0.7500    0.6500
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0    0.0000         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+
+  Columns 11 through 16
+
+    0.0000    0.0001    0.0001    0.0000    0.0000    0.0000
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0002    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0001    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0001    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0    0.0000         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+
+  Columns 11 through 16
+
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0002    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0002    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000         0         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+
+  Columns 11 through 16
+
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0002    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0001    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+         0    0.0000         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0    0.0000         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0    0.0000         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+
+  Columns 11 through 16
+
+    0.0000    0.0000    0.0002    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0002    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0002    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0001    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000         0         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000         0         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000         0         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000         0         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+
+  Columns 11 through 16
+
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0000    0.0000    0.0002    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0002    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+
+  Columns 11 through 16
+
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0002    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000         0         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+
+  Columns 11 through 16
+
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0002    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+
+
+data =
+
+  1.0e+005 *
+
+  Columns 1 through 10
+
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000         0         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0    0.0000         0    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+         0         0    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000         0
+    0.0000    0.0000    0.0000    0.0000    0.0000    0.0000    7.3660    0.0041    0.0000    0.0000
+
+  Columns 11 through 16
+
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0000    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0000    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0001    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0001    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0002    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0003    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000         0
+    0.0004    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000         0
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+    0.0005    0.0000    0.0001    0.0000    0.0000    0.0000
+
+
+dates = 
+
+    'Mouse'    'L4'             'L5'         
+    '411'      '28-Sep-2016'    '29-Sep-2016'
+    '413'      '28-Sep-2016'    '29-Sep-2016'
+    '412'      '28-Sep-2016'    '29-Sep-2016'
+    '414'      '28-Sep-2016'    '29-Sep-2016'
+
+
+f1 =
+
+   412
+
+
+lightOpsin =
+
+    0.5700    0.7500    0.6500
+
+
+x =
+
+     1     2
+
+
+sampleSize =
+
+     4
+
+
+b =
+
+  310.1115
+
+
+b =
+
+  316.1115
+
+
+ans =
+
+    0.8750
+
+
+lightOpsin =
+
+    0.5700    0.7500    0.6500
+
+
+x =
+
+     1     2
+
+
+sampleSize =
+
+     4
+
+
+b =
+
+  332.1115
+
+
+b =
+
+  338.1115
+
+
+ans =
+
+     1
+
+
+lightOpsin =
+
+    0.5700    0.7500    0.6500
+
+
+x =
+
+     1     2
+
+
+sampleSize =
+
+     4
+
+
+b =
+
+  354.1115
+
+
+b =
+
+  360.1115
+
+
+ans =
+
+     1
+
+
+lightOpsin =
+
+    0.5700    0.7500    0.6500
+
+
+x =
+
+     1     2
+
+
+sampleSize =
+
+     4
+
+
+b =
+
+  376.1115
+
+
+b =
+
+  382.1115
+
+
+ans =
+
+    0.5000
+
+
+lightOpsin =
+
+    0.5700    0.7500    0.6500
+
+
+x =
+
+     1     2
+
+
+sampleSize =
+
+     4
+
+
+b =
+
+  398.1115
+
+
+b =
+
+  404.1115
+
+</pre><pre class="codeoutput">Error using set
+Bad property value found. 
+Object Name :  axes
+Property Name : 'YLim'
+Values must be increasing and non-NaN.
+
+Error in ylim (line 44)
+    set(ax,'ylim',val);
+
+Error in barPlot2 (line 62)
+ylim([miny, maxy])
+
+Error in PopEvi (line 175)
+barPlot2(qualifiedTrialsOff, qualifiedTrialsOn, micetoana, opsin, individualPoints, names)
+</pre><pre class="codeinput">figure(micetoana(end)*2)
+<span class="keyword">for</span> m=1:length(micetoana)
+   subplot(4, 3, m)
+   hold <span class="string">on</span>
+
+   opsinType=geno(find(geno(:, 1)==micetoana(m)), 3);
+<span class="keyword">switch</span> opsinType
+    <span class="keyword">case</span> 2
+    opsin=green;
+    <span class="keyword">case</span> 1
+    opsin=blue;
+    <span class="keyword">case</span> 0
+    opsin=<span class="string">'k'</span>;
+<span class="keyword">end</span>
+    data=eval([<span class="string">'mouseData_'</span>,num2str(micetoana(m))]);
+
+    scatter(data(:, 4), data(:, 6), <span class="string">'k'</span>);
+    [r, p]=corr(data(:, 4), data(:, 6));
+    plot(data(find(data(:, 10)==1), 4), data(find(data(:, 10)==1), 6), <span class="string">'.'</span>, <span class="string">'Color'</span>, opsin)
+    [ron, pon]=corr(data(find(data(:, 10)==1), 4), data(find(data(:, 10)==1), 6))
+    [roff, poff]=corr(data(find(data(:, 10)==0), 4), data(find(data(:, 10)==0), 6))
+<span class="comment">%     text(0.6, 2, ['r=', num2str(r)])</span>
+    title([num2str(micetoana(m)), <span class="string">' ron^2='</span>, num2str(ron^2), <span class="string">' pon ='</span>, num2str(pon),<span class="string">' roff^2='</span>, num2str(roff^2), <span class="string">' poff ='</span>, num2str(poff)])
+<span class="keyword">end</span>
+</pre><p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+
+
+load('C:\Users\user\Documents\Evidence\DataMatrices\genotype.mat')
+load('C:\Users\user\Documents\Evidence\DataMatrices\protocol100.mat')
+
+styling;
+
+%%
+% 
+%     
+micetoana=[417:421, 423:424];
+daystoana=[13, 14, 16];
+% % 
+% micetoana=[411, 412, 414];
+% daystoana=[27:29];
+% micetoana=[409:416];
+% daystoana=[13 14];
+% micetoana=[425:430, 432]
+% daystoana=[15]
+micetoana=[425];
+daystoana=14
+% micetoana=[425:432];
+% daystoana=[1:13];
+% % % 
+% % % 
+% micetoana=[417:421, 423:424];
+% daystoana=[13, 14, 16];
+% micetoana=[409:416];
+% daystoana=[13:14];
+% 
+% % micetoana=[409:416];
+% % daystoana=[22, 23, 25];
+
+dateRange=runMiceDay(micetoana, daystoana);
+
+%%
+Notes=[];
+odorConstrast='100';
+protocol=eval(['protocol', num2str(odorConstrast)]);
+
+sessionstoana={'L1', 'L2', 'L3'};
+sessionstoana={'L4', 'L5'};
+% sessionstoana={'L1'};
+removeStickyTrials=0;
+
+% Notes='Odor: 70/30';
+micetoana=[409, 415, 416, 417, 418, 424, 428, 432]
+micetoana=[409, 415, 416, 428, 432]
+% micetoana=[409, 415, 416, 417, 418, 424, 412, 413, 414, 419, 420]
+% micetoana=[409, 416]
+% micetoana=[425]
+% micetoana=[  411, 412, 413, 414, 419, 420, 425, 426, 430]
+% micetoana=[  411, 412, 413, 414, 425, 426, 430]
+micetoana=[  411, 413 412, 414]
+% startEndTrials=[1:50]
+individualPoints=1;
+names=1;
+
+opsinType=geno(find(geno(:, 1)==micetoana(1)), 3);
+switch opsinType
+    case 2
+    opsin=green;
+    case 1
+    opsin=blue;
+    case 0
+    opsin='k';   
+end
+opsinName=['Ctrl'; 'ChR2'; 'Arch'];
+lightOpsin=rgb2hsv(opsin);
+lightOpsin=[lightOpsin(1), lightOpsin(2)*0.4,lightOpsin(3)];
+lightOpsin=hsv2rgb(lightOpsin)
+% %%
+sampTimeOn=[];
+sampTimeOff=[];
+transitTimeOn=[];
+transitTimeOff=[];
+sampleSize=length(micetoana);
+noTimeOut=[];
+percentQualifiedOn=[];
+percentQualifiedOff=[];
+attemtsToQualifyOn=[];
+attemtsToQualifyOff=[];
+accuracyOn=[];
+accuracyOff=[];
+qualifiedTrialsOff=[];
+qualifiedTrialsOn=[];
+dates=cell(1);
+totalData=[];
+
+listofmice=[];
+for i=2:length(protocol(:, 1))
+listofmice(i, 1)=protocol{i, 1};
+end
+
+for mouse=1:length(micetoana)
+    mouseData=[];
+    dates{mouse, 1}=num2str(micetoana(mouse));
+    mouseInd=find(listofmice==micetoana(mouse));
+    for day=1:length(sessionstoana)
+        sessionInd=find(ismember(protocol100(1, :), sessionstoana(day)));
+        date=datenum(protocol(mouseInd, sessionInd));
+        dates(mouse, day+1)=protocol(mouseInd, sessionInd);
+        data=eval(['data_', num2str(micetoana(mouse)), '_', num2str(date)]);
+        %exclude timeout trials
+        data=data(find(data(:, 3)~=-1), :)
+%         data=data(find(data(:, 1)==1), :);
+%         data=data(startEndTrials, :);
+        if removeStickyTrials==1
+                    data=data(find(data(:, 4)>0.4), :);
+        end
+%         noTimeOut(day, mouse)=length(find(data(:, 3)<0));
+        stimOnTrials=find(data(:, 10)==1);
+        stimOffTrials=find(data(:, 10)==0);
+        sampTimeOn(day, mouse)=mean(data(stimOnTrials, 4));
+        sampTimeOff(day, mouse)=mean(data(stimOffTrials, 4));
+        transitTimeOn(day, mouse)=mean(data(stimOnTrials, 6));
+        transitTimeOff(day, mouse)=mean(data(stimOffTrials, 6));
+        percentQualifiedOn(day, mouse)=length(data(stimOnTrials, 12))/sum(data(stimOnTrials, 12));
+        percentQualifiedOff(day, mouse)=length(data(stimOffTrials, 12))/sum(data(stimOffTrials, 12));
+        attemtsToQualifyOn(day, mouse)=mean(data(stimOnTrials, 12));
+        attemtsToQualifyOff(day, mouse)=mean(data(stimOffTrials, 12));
+        accuracyOn(day, mouse)=mean(data(stimOnTrials, 3));
+        accuracyOff(day, mouse)=mean(data(stimOffTrials, 3));
+        qualifiedTrialsOff(day, mouse)=(1-mean(data(stimOffTrials, 15)))*100;
+        qualifiedTrialsOn(day, mouse)=(1-mean(data(stimOnTrials, 15)))*100;
+        mouseData=[mouseData; data];
+
+    
+    end
+    assignin('base', ['mouseData_',num2str(micetoana(mouse))], mouseData);
+    
+    totalData=[totalData;mouseData];
+end
+header=[{'Mouse'}, sessionstoana];
+dates=[header; dates]
+assignin('base', ['dates',num2str(micetoana(1)), 'to', num2str(micetoana(mouse))], dates);
+% %%
+nowDate=datestr(now);
+nowDate=nowDate(1:11);
+fid = fopen( [imagepath, '/groupAnalysis/', opsinName(opsinType+1, :),num2str(micetoana(1)), 'to', ...
+    num2str(micetoana(mouse)), '_', num2str(sessionstoana{1}), 'to', ...
+    num2str(sessionstoana{end}), '_', nowDate, '.txt'], 'wt' );
+formatSpec='%s, %s, %s, %s\n';
+[nrows,ncols] = size(dates);
+for row = 1:nrows
+    fprintf(fid,formatSpec,dates{row,:});
+end
+fclose(fid);
+% %%
+minimumSamplingTime=(data(end, 14)+data(end, 9))*1000;
+
+f1=figure(micetoana(1)+data(1, 1))
+set(f1, 'Position', [100, 100, 1200  400])
+
+subplot(151)
+barPlot2(sampTimeOff, sampTimeOn, micetoana, opsin, individualPoints, names)
+
+ylabel('Sampling Time (s)')
+
+subplot(152)
+barPlot2(transitTimeOff, transitTimeOn, micetoana, opsin, individualPoints, names)
+ylabel('Reaction Time (s)')
+
+
+subplot(153)
+barPlot2(percentQualifiedOff*100, percentQualifiedOn*100, micetoana, opsin, individualPoints, names)
+ylabel('Percent CPoke Attempt Qualified')
+
+subplot(154)
+barPlot2(accuracyOff*100, accuracyOn*100, micetoana, opsin, individualPoints, names)
+ylabel('Accuracy')
+
+
+subplot(155)
+barPlot2(qualifiedTrialsOff, qualifiedTrialsOn, micetoana, opsin, individualPoints, names)
+ylabel('Percent Trials Qualified')
+
+% suptitle(['mouse # ' num2str(micetoana),'  session ' datestr(dates(1)) , ':',...
+%     datestr(dates(end)), ' (min ', num2str(minimumSamplingTime), 'ms)', Notes])
+% %%
+% imagepath='C:\Users\user\Documents\Evidence\images\groupAnalysis\'
+
+fnam1=[imagepath, '/groupAnalysis/', opsinName(opsinType+1, :),num2str(micetoana(1)), 'to', ...
+    num2str(micetoana(mouse)), '_', num2str(sessionstoana{1}), 'to', ...
+    num2str(sessionstoana{end}), '_', nowDate, 'lightOnOff.png']; % your file name
+
+snam='summaryFigure'; % note: NO extension...
+s=hgexport('readstyle',snam);
+s.Format='png';
+hgexport(f1,fnam1,s);
+
+% %%
+
+
+figure(micetoana(2)+20)
+individualPoints=01
+dates=dateRange(1:3)
+subplot(131)
+hold on
+for i=1:3
+    
+    plot(i, mean(sampTimeOff(i, :), 2), 'ko')
+    ownErrorbar(i, mean(sampTimeOff(i, :), 2), std(sampTimeOff(i, :), 0, 2)/sqrt(length(micetoana)), std(sampTimeOff(i, :), 0, 2)/sqrt(length(micetoana)), .1, 2, 'k')
+    [h, p]=ttest(sampTimeOff(i, :), sampTimeOn(i, :))
+    text(i,  mean(sampTimeOff(i, :), 2)+0.02, num2str(p))
+    plot(i, mean(sampTimeOn(i, :), 2), 'o', 'Color', opsin)
+    ownErrorbar(i, mean(sampTimeOn(i, :), 2), std(sampTimeOn(i, :),0, 2)/sqrt(length(micetoana)), std(sampTimeOn(i, :),0,  2)/sqrt(length(micetoana)), .1, 2, opsin)   
+        plot(ones(length(sampTimeOff(i, :)), 1)*i, sampTimeOff(i, :), '.', 'Color', lightGray, 'MarkerSize', 15);
+        plot(ones(length(sampTimeOn(i, :)), 1)*i, sampTimeOn(i, :), '.', 'Color', lightOpsin, 'MarkerSize', 15);
+    end
+
+plot([1, 2, 3], mean(sampTimeOff, 2), 'k-')
+plot([1, 2, 3], mean(sampTimeOn, 2), '-', 'Color', opsin)
+ylabel('Sampling Time (s)')
+
+if individualPoints==1
+
+    for i=1:length(micetoana)
+        text(3.5, sampTimeOff(3, i), num2str(micetoana(i)), 'Color', lightGray)
+        text(3.5, sampTimeOn(3, i), num2str(micetoana(i)), 'Color', opsin)
+        text(0.5, sampTimeOff(1, i), num2str(micetoana(i)), 'Color', lightGray)
+        text(0.5, sampTimeOn(1, i), num2str(micetoana(i)), 'Color', opsin)
+        plot([1, 2, 3], sampTimeOn(:, i), '-', 'Color', lightOpsin)
+        plot([1, 2, 3], sampTimeOff(:, i), '-', 'Color', lightGray)
+
+    end
+end
+    xlim([0.5 4])
+% %%
+sampDiff=sampTimeOn-sampTimeOff;
+
+subplot(132)
+hold on
+for i=1:3
+    
+    plot(i, mean(sampDiff(i, :), 2), 'o', 'Color', opsin)
+    ownErrorbar(i, mean(sampDiff(i, :), 2), std(sampDiff(i, :),0, 2)/sqrt(length(micetoana)), std(sampDiff(i, :),0,  2)/sqrt(length(micetoana)), .1, 2, opsin)   
+        plot(ones(length(sampDiff(i, :)), 1)*i, sampDiff(i, :), '.', 'Color', lightOpsin, 'MarkerSize', 15);
+end
+
+if individualPoints==1
+    for i=1:length(micetoana)
+        text(3.5, sampDiff(3, i), num2str(micetoana(i)), 'Color', opsin)
+        text(0.5, sampDiff(1, i), num2str(micetoana(i)), 'Color', opsin)
+        plot([1, 2, 3], sampDiff(:, i), '-', 'Color', lightOpsin)
+
+    end
+end
+plot([0 4],[0 0], 'Color', lightGray )
+plot([1, 2, 3], mean(sampDiff, 2), '-', 'Color', opsin)
+ylabel('Difference in Sampling Time (s)')
+
+ylim([-.07 .07])
+
+
+sampDiffNorm=(sampTimeOn-sampTimeOff)./sampTimeOff;
+
+subplot(133)
+hold on
+for i=1:3
+    
+    plot(i, mean(sampDiffNorm(i, :), 2), 'o', 'Color', opsin)
+    ownErrorbar(i, mean(sampDiffNorm(i, :), 2), std(sampDiffNorm(i, :),0, 2)/sqrt(length(micetoana)), std(sampDiffNorm(i, :),0,  2)/sqrt(length(micetoana)), .1, 2, opsin)   
+        plot(ones(length(sampDiffNorm(i, :)), 1)*i, sampDiffNorm(i, :), '.', 'Color', lightOpsin, 'MarkerSize', 15);
+end
+
+if individualPoints==1
+    for i=1:length(micetoana)
+        text(3.5, sampDiffNorm(3, i), num2str(micetoana(i)), 'Color', opsin)
+        text(0.5, sampDiffNorm(1, i), num2str(micetoana(i)), 'Color', opsin)
+        plot([1, 2, 3], sampDiffNorm(:, i), '-', 'Color', lightOpsin)
+
+    end
+end
+plot([0 4],[0 0], 'Color', lightGray )
+plot([1, 2, 3], mean(sampDiffNorm, 2), '-', 'Color', opsin)
+ylabel('Normalized Difference in Sampling Time (s)')
+
+ylim([-.20 .20])
+
+
+%%
+
+figure(micetoana(end)*2)
+for m=1:length(micetoana)
+   subplot(4, 3, m)
+   hold on
+   
+   opsinType=geno(find(geno(:, 1)==micetoana(m)), 3);
+switch opsinType
+    case 2
+    opsin=green;
+    case 1
+    opsin=blue;
+    case 0
+    opsin='k';   
+end
+    data=eval(['mouseData_',num2str(micetoana(m))]);
+    
+    scatter(data(:, 4), data(:, 6), 'k');
+    [r, p]=corr(data(:, 4), data(:, 6));
+    plot(data(find(data(:, 10)==1), 4), data(find(data(:, 10)==1), 6), '.', 'Color', opsin)
+    [ron, pon]=corr(data(find(data(:, 10)==1), 4), data(find(data(:, 10)==1), 6))
+    [roff, poff]=corr(data(find(data(:, 10)==0), 4), data(find(data(:, 10)==0), 6))
+%     text(0.6, 2, ['r=', num2str(r)])
+    title([num2str(micetoana(m)), ' ron^2=', num2str(ron^2), ' pon =', num2str(pon),' roff^2=', num2str(roff^2), ' poff =', num2str(poff)])
+end
+
+##### SOURCE END #####
+--></body></html>
